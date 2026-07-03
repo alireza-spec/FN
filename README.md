@@ -39,7 +39,7 @@ family-night/
 
 پس از فعال‌سازی GitHub Pages، سایت در آدرس زیر در دسترس خواهد بود:
 ```
-https://[USERNAME].github.io/[REPO-NAME]/
+https://alireza-spec.github.io/FN/
 ```
 
 ## 📱 پشتیبانی
