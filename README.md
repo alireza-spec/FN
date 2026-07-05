@@ -106,7 +106,6 @@ This product uses the TMDB API but is not endorsed or certified by TMDB.
 
 <div align="center">
 
-Made with 🎬, ☕, and a lot of patience.
-با ❤️، ☕ و کلی صبر ساخته شده.
+Made with ❤️, 🎬, ☕, and a lot of patience.
 
 </div>
