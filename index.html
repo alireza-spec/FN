@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#15171a">
+    <link rel="preconnect" href="https://family-night-api.alirezadoe8.workers.dev" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <meta name="description" content="Family Night: discover movies, series and anime, compare titles, analyze your cinema personality, and keep your favorites and watch history.">
     <meta property="og:title" content="Family Night">
     <meta property="og:description" content="Discover movies, series and anime, compare titles, and analyze your cinema personality.">
@@ -29,7 +32,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <title>Family Night v41.0.0</title>
+    <title>Family Night v42.0.0</title>
     <!-- DNS Prefetch & Preconnect for faster API/image loads -->
     <link rel="preconnect" href="https://family-night-api.alirezadoe8.workers.dev" crossorigin>
     <link rel="preconnect" href="https://family-night-api.alirezadoe8.workers.dev" crossorigin>
@@ -4456,9 +4459,9 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
 <script>
 (function(){
   function __fnHideBoot(){try{var e=document.getElementById('app-loading-screen');if(e && e.style.display!=='none'){e.classList.add('fade-out');setTimeout(function(){e.style.display='none';},700);}}catch(_){}}
-  // Primary reveal at 5s; redundant fallback attempts guarantee the app is never permanently
+  // Primary reveal at 1.5s; redundant fallback attempts guarantee the app is never permanently
   // blocked even if the teaser animation logic itself hits an error.
-  setTimeout(__fnHideBoot,5000); setTimeout(__fnHideBoot,8000); setTimeout(__fnHideBoot,11000);
+  setTimeout(__fnHideBoot,1500); setTimeout(__fnHideBoot,3000); setTimeout(__fnHideBoot,5000);
 
   var FEATURES_FA = [
     { icon:'fa-magnifying-glass', text:'جستجوی آنی و کشف هوشمند فیلم و سریال' },
@@ -4505,13 +4508,13 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
         if (track) track.style.transform = 'translateX(-' + (i * 20) + '%)';
         renderFeature(i);
       }, 1000);
-      setTimeout(function(){ clearInterval(stepTimer); }, 5000);
+      setTimeout(function(){ clearInterval(stepTimer); }, 1500);
 
-      // Percentage-synced progress bar — reaches exactly 100% at the 5s mark.
+      // Percentage-synced progress bar — reaches exactly 100% at the 1.5s mark.
       var elapsed = 0;
       var pctTimer = setInterval(function(){
         elapsed += 50;
-        var p = Math.min(100, Math.round((elapsed / 5000) * 100));
+        var p = Math.min(100, Math.round((elapsed / 1500) * 100));
         if (fill) fill.style.width = p + '%';
         if (pct) pct.textContent = p + '%';
         if (p >= 100) clearInterval(pctTimer);
@@ -4529,10 +4532,10 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
             <div class="splash-phone-screen">
                 <div class="splash-phone-track" id="splash-phone-track">
                     <img class="splash-phone-shot" src="screenshots/shot-2.jpg" onerror="this.style.opacity='0'">
-                    <img class="splash-phone-shot" src="screenshots/shot-9.jpg" onerror="this.style.opacity='0'">
-                    <img class="splash-phone-shot" src="screenshots/shot-4.jpg" onerror="this.style.opacity='0'">
-                    <img class="splash-phone-shot" src="screenshots/shot-6.jpg" onerror="this.style.opacity='0'">
-                    <img class="splash-phone-shot" src="screenshots/shot-5.jpg" onerror="this.style.opacity='0'">
+                    <img class="splash-phone-shot" src="screenshots/shot-9.jpg" loading="lazy" decoding="async" onerror="this.style.opacity='0'">
+                    <img class="splash-phone-shot" src="screenshots/shot-4.jpg" loading="lazy" decoding="async" onerror="this.style.opacity='0'">
+                    <img class="splash-phone-shot" src="screenshots/shot-6.jpg" loading="lazy" decoding="async" onerror="this.style.opacity='0'">
+                    <img class="splash-phone-shot" src="screenshots/shot-5.jpg" loading="lazy" decoding="async" onerror="this.style.opacity='0'">
                 </div>
             </div>
         </div>
@@ -5495,7 +5498,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
                 <div class="setting-section">
                     <div class="setting-header" id="txt-about-head">About</div>
                     <div class="dev-info">
-                        <p style="margin-bottom:10px;"><strong id="txt-desc-t">Family Night v41.0.0</strong></p>
+                        <p style="margin-bottom:10px;"><strong id="txt-desc-t">Family Night v42.0.0</strong></p>
                         <p id="txt-desc-b">The ultimate streaming experience. High-quality movies and series at your fingertips.</p>
                         <br>
                         <p id="txt-copy">© 2025 Game of family. All rights reserved.</p>
@@ -26110,12 +26113,61 @@ document.addEventListener('fullscreenchange',icons);document.addEventListener('w
 })();
 </script>
 <script>
-// FN-v41: single version, local error log, backup timestamp, personalized home row.
+// FN-v42: single version, local error log, backup timestamp, personalized home row.
 // This block runs last on purpose: it wins over the older version strings
 // (v37 title, v26 footer, v40 patch) without editing dozens of patch blocks.
 (function(){
   'use strict';
-  var FN_VER41 = 'v41.0.0';
+  // FN-v42 speed: lazy home rows. renderHome used to call loadRow for all 52
+  // sections at once because fnLoadHomeRow was never defined (fn-api.js is not
+  // loaded). Now only the first 2 rows load immediately; the rest start only
+  // when they come within 900px of the viewport. No section is removed: every
+  // row still loads exactly as before, just when the user can actually see it.
+  // The monthly-upcoming widget at the bottom is deferred the same way (700px).
+  if (!window.fnLoadHomeRow) {
+    var _fnEagerRows = 0;
+    var _fnRowObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (!entry.isIntersecting) return;
+        _fnRowObserver.unobserve(entry.target);
+        if (entry.target.__fnStart) entry.target.__fnStart();
+      });
+    }, { rootMargin: '900px 0px' }) : null;
+    window.fnLoadHomeRow = function(section, id){
+      var el = document.getElementById(id);
+      if (!el || el.dataset.fnQueued) return;
+      el.dataset.fnQueued = '1';
+      var start = function(){
+        if (el.dataset.fnLoaded) return;
+        el.dataset.fnLoaded = '1';
+        if (section.trending && typeof window.loadTrendingRow === 'function') window.loadTrendingRow(section.q, id);
+        else if (section.adult && typeof window.loadAdultRow === 'function') window.loadAdultRow(id);
+        else if (typeof window.loadRow === 'function') window.loadRow(section.q, id, section.type);
+      };
+      var sec = el.closest ? el.closest('.section') : null;
+      if (sec) sec.__fnStart = start;
+      if (_fnEagerRows++ < 2 || !_fnRowObserver) start();
+      else if (sec) _fnRowObserver.observe(sec);
+      else start();
+    };
+  }
+  if (!window.fnDeferHomeTask) {
+    var _fnDeferredObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (!entry.isIntersecting) return;
+        _fnDeferredObserver.unobserve(entry.target);
+        if (entry.target.__fnDeferredTask) entry.target.__fnDeferredTask();
+      });
+    }, { rootMargin: '700px 0px' }) : null;
+    window.fnDeferHomeTask = function(el, task){
+      if (!el || el.dataset.fnDeferred) return;
+      el.dataset.fnDeferred = '1';
+      el.__fnDeferredTask = task;
+      if (_fnDeferredObserver) _fnDeferredObserver.observe(el);
+      else task();
+    };
+  }
+  var FN_VER41 = 'v42.0.0';
   window.FN_APP_VERSION = FN_VER41;
   function fnIsFa(){ try { return (typeof LANG !== 'undefined' ? LANG : (localStorage.getItem('lang') || 'fa')) === 'fa'; } catch(e){ return true; } }
   function applyFnVersion(){
