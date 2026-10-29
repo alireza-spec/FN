@@ -32,7 +32,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <title>Family Night v42.0.0</title>
+    <title>Family Night v43.0.0</title>
     <!-- DNS Prefetch & Preconnect for faster API/image loads -->
     <link rel="preconnect" href="https://family-night-api.alirezadoe8.workers.dev" crossorigin>
     <link rel="preconnect" href="https://family-night-api.alirezadoe8.workers.dev" crossorigin>
@@ -5498,7 +5498,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
                 <div class="setting-section">
                     <div class="setting-header" id="txt-about-head">About</div>
                     <div class="dev-info">
-                        <p style="margin-bottom:10px;"><strong id="txt-desc-t">Family Night v42.0.0</strong></p>
+                        <p style="margin-bottom:10px;"><strong id="txt-desc-t">Family Night v43.0.0</strong></p>
                         <p id="txt-desc-b">The ultimate streaming experience. High-quality movies and series at your fingertips.</p>
                         <br>
                         <p id="txt-copy">© 2025 Game of family. All rights reserved.</p>
@@ -6437,7 +6437,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
                 // TMDB از CORS پشتیبانی می‌کنه — مستقیم و سریع
                 try {
                     const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 5000);
+                    const timeout = setTimeout(() => controller.abort(), 12000);
                     const res = await fetch(finalUrl, { signal: controller.signal });
                     clearTimeout(timeout);
                     if (res.ok) return await res.json();
@@ -8338,10 +8338,14 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
             return arr;
         }
         async function _fetchDiscoverPages(query, pages=3) {
+            // FN-v43: pages are independent, so fetch them together instead of
+            // one after another (8 sequential pages = 8x latency on a slow link).
+            // Promise.all preserves page order, so the pool order is unchanged.
+            const jobs = [];
+            for(let i=1;i<=pages;i++) jobs.push(getData(query + (query.includes('?') ? '&' : '?') + 'page=' + i).catch(() => null));
+            const all = await Promise.all(jobs);
             let out=[];
-            for(let i=1;i<=pages;i++) {
-                try { const d = await getData(query + (query.includes('?') ? '&' : '?') + 'page=' + i); if(d && d.results) out = out.concat(d.results); } catch(e) {}
-            }
+            all.forEach(d => { if(d && d.results) out = out.concat(d.results); });
             return _uniqById(out);
         }
         async function _fetchTitleList(list, type, page, perPage) {
@@ -8383,6 +8387,11 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
             return out;
         }
         async function _enrichIMDbRatings(items, type, max=60) {
+            // FN-v43: on Home only the first 20 cards are shown, so enriching
+            // 100-120 titles (external_ids + OMDb each) kept the skeleton up
+            // for minutes. Home caps at the 40 strongest candidates; the
+            // rating then still sorts those 40, and See All is unaffected.
+            if (typeof window !== 'undefined' && window.__fnHomeEnrich) max = Math.min(max, 40);
             const slice = items.slice(0, max);
             await Promise.all(slice.map(async it => {
                 try {
@@ -8394,14 +8403,18 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
                     if(cached) { it._imdbRating = parseFloat(cached) || 0; return; }
                     for(const key of OMDB_RATING_KEYS) {
                         try {
-                            const r = await fetch(`https://www.omdbapi.com/?i=${encodeURIComponent(imdbId)}&apikey=${key}`);
+                            const _omdbCtl = new AbortController();
+                            const _omdbTimer = setTimeout(() => _omdbCtl.abort(), 4000);
+                            let r;
+                            try { r = await fetch(`https://www.omdbapi.com/?i=${encodeURIComponent(imdbId)}&apikey=${key}`, { signal: _omdbCtl.signal }); }
+                            finally { clearTimeout(_omdbTimer); }
                             const j = await r.json();
                             if(j && j.imdbRating && j.imdbRating !== 'N/A') {
                                 it._imdbRating = parseFloat(j.imdbRating) || 0;
                                 localStorage.setItem('fn_imdb_rating_'+imdbId, String(it._imdbRating));
                                 break;
                             }
-                        } catch(e) {}
+                        } catch(e) { if (e && e.name === 'AbortError') break; }
                     }
                 } catch(e) {}
             }));
@@ -8714,7 +8727,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
         async function getCustomCategoryResults(q, page=1, mode='default') {
             const perPage = CUSTOM_PAGE_SIZE;
             const [_, kind, a, b] = q.split(':');
-            const key = [q, page, mode, LANG].join('|');
+            const key = [q, page, mode, LANG, (typeof window !== 'undefined' && window.__fnHomeEnrich) ? 'home40' : 'full'].join('|');
             if(SMART_ROW_CACHE[key]) return SMART_ROW_CACHE[key];
             let items=[], total=999, type='movie', defaultMode='imdb';
             if(kind === 'updated_series') {
@@ -8922,7 +8935,10 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
             // Special handling for Curator's Pick
             if (q && q.startsWith('custom:')) {
                 const homeMode = q.startsWith('custom:best_decade:') ? 'random' : 'default';
-                const d = await getCustomCategoryResults(q, 1, homeMode);
+                window.__fnHomeEnrich = true;
+                let d;
+                try { d = await getCustomCategoryResults(q, 1, homeMode); }
+                finally { window.__fnHomeEnrich = false; }
                 const c = document.getElementById(elId);
                 fnFinishCategoryLoader(c);
                 if(d && d.results) d.results.slice(0, 20).forEach(m => { const cardType = d.type === 'mixed' ? (m.media_type || 'movie') : (d.type || type); if (cardType === 'tv' && isTVShowExcluded(m)) return; c.innerHTML += makeCard(m, cardType); });
@@ -26113,7 +26129,7 @@ document.addEventListener('fullscreenchange',icons);document.addEventListener('w
 })();
 </script>
 <script>
-// FN-v42: single version, local error log, backup timestamp, personalized home row.
+// FN-v43: single version, local error log, backup timestamp, personalized home row.
 // This block runs last on purpose: it wins over the older version strings
 // (v37 title, v26 footer, v40 patch) without editing dozens of patch blocks.
 (function(){
@@ -26167,7 +26183,7 @@ document.addEventListener('fullscreenchange',icons);document.addEventListener('w
       else task();
     };
   }
-  var FN_VER41 = 'v42.0.0';
+  var FN_VER41 = 'v43.0.0';
   window.FN_APP_VERSION = FN_VER41;
   function fnIsFa(){ try { return (typeof LANG !== 'undefined' ? LANG : (localStorage.getItem('lang') || 'fa')) === 'fa'; } catch(e){ return true; } }
   function applyFnVersion(){
