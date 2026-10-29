@@ -18822,8 +18822,8 @@ ${imdbUrl ? '🔗 ' + imdbUrl : '🔗 IMDb link unavailable'}
 - امتیاز IMDb: ${cd.aRate.toFixed(1)}
 - آرا: ${cd.aVotes.toLocaleString()}
 - مدت: ${cd.aRuntime ? cd.aRuntime + ' دقیقه' : 'نامشخص'}
-- جوایز کسب‌شده: ${cd.aAwards.wins}
-- نامزدی: ${cd.aAwards.noms}
+- جوایز کسب‌شده: ${cd.aAwards.hasData ? cd.aAwards.wins : 'نامشخص'}
+- نامزدی: ${cd.aAwards.hasData ? cd.aAwards.noms : 'نامشخص'}
 ${cd.aRT !== null ? '- Rotten Tomatoes: ' + cd.aRT + '%' : ''}
 ${cd.aMeta !== null ? '- Metacritic: ' + cd.aMeta : ''}
 
@@ -18831,8 +18831,8 @@ ${cd.aMeta !== null ? '- Metacritic: ' + cd.aMeta : ''}
 - امتیاز IMDb: ${cd.bRate.toFixed(1)}
 - آرا: ${cd.bVotes.toLocaleString()}
 - مدت: ${cd.bRuntime ? cd.bRuntime + ' دقیقه' : 'نامشخص'}
-- جوایز کسب‌شده: ${cd.bAwards.wins}
-- نامزدی: ${cd.bAwards.noms}
+- جوایز کسب‌شده: ${cd.bAwards.hasData ? cd.bAwards.wins : 'نامشخص'}
+- نامزدی: ${cd.bAwards.hasData ? cd.bAwards.noms : 'نامشخص'}
 ${cd.bRT !== null ? '- Rotten Tomatoes: ' + cd.bRT + '%' : ''}
 ${cd.bMeta !== null ? '- Metacritic: ' + cd.bMeta : ''}
 
@@ -18843,8 +18843,8 @@ Film 1: "${cd.a.title}" (${cd.aYear})
 - IMDb: ${cd.aRate.toFixed(1)}
 - Votes: ${cd.aVotes.toLocaleString()}
 - Runtime: ${cd.aRuntime ? cd.aRuntime + ' min' : 'N/A'}
-- Awards Won: ${cd.aAwards.wins}
-- Nominations: ${cd.aAwards.noms}
+- Awards Won: ${cd.aAwards.hasData ? cd.aAwards.wins : 'unknown'}
+- Nominations: ${cd.aAwards.hasData ? cd.aAwards.noms : 'unknown'}
 ${cd.aRT !== null ? '- Rotten Tomatoes: ' + cd.aRT + '%' : ''}
 ${cd.aMeta !== null ? '- Metacritic: ' + cd.aMeta : ''}
 
@@ -18852,8 +18852,8 @@ Film 2: "${cd.b.title}" (${cd.bYear})
 - IMDb: ${cd.bRate.toFixed(1)}
 - Votes: ${cd.bVotes.toLocaleString()}
 - Runtime: ${cd.bRuntime ? cd.bRuntime + ' min' : 'N/A'}
-- Awards Won: ${cd.bAwards.wins}
-- Nominations: ${cd.bAwards.noms}
+- Awards Won: ${cd.bAwards.hasData ? cd.bAwards.wins : 'unknown'}
+- Nominations: ${cd.bAwards.hasData ? cd.bAwards.noms : 'unknown'}
 ${cd.bRT !== null ? '- Rotten Tomatoes: ' + cd.bRT + '%' : ''}
 ${cd.bMeta !== null ? '- Metacritic: ' + cd.bMeta : ''}
 
@@ -18910,9 +18910,9 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
                     const winner = aScore >= bScore ? cd.a.title : cd.b.title;
                     const loser = aScore >= bScore ? cd.b.title : cd.a.title;
                     if (isFA) {
-                        aiText = `📊 تحلیل بر اساس داده‌های موجود:\n\n🎬 ${cd.a.title} (${cd.aYear})\nامتیاز IMDb: ${cd.aRate.toFixed(1)} | آرا: ${cd.aVotes.toLocaleString()} | جوایز: ${cd.aAwards.wins} | نامزدی: ${cd.aAwards.noms}${cd.aRT!==null?' | RT: '+cd.aRT+'%':''}${cd.aMeta!==null?' | MC: '+cd.aMeta:''}\n\n🎬 ${cd.b.title} (${cd.bYear})\nامتیاز IMDb: ${cd.bRate.toFixed(1)} | آرا: ${cd.bVotes.toLocaleString()} | جوایز: ${cd.bAwards.wins} | نامزدی: ${cd.bAwards.noms}${cd.bRT!==null?' | RT: '+cd.bRT+'%':''}${cd.bMeta!==null?' | MC: '+cd.bMeta:''}\n\n🏆 نتیجه: بر اساس مجموع امتیازات، آرا، جوایز و نامزدی‌ها، "${winner}" در مجموع امتیاز بالاتری دارد. البته این یک مقایسه عددی است و سلیقه شخصی در انتخاب نهایی اهمیت دارد.`;
+                        aiText = `📊 تحلیل بر اساس داده‌های موجود:\n\n🎬 ${cd.a.title} (${cd.aYear})\nامتیاز IMDb: ${cd.aRate.toFixed(1)} | آرا: ${cd.aVotes.toLocaleString()} | جوایز: ${cd.aAwards.hasData ? cd.aAwards.wins : '—'} | نامزدی: ${cd.aAwards.hasData ? cd.aAwards.noms : '—'}${cd.aRT!==null?' | RT: '+cd.aRT+'%':''}${cd.aMeta!==null?' | MC: '+cd.aMeta:''}\n\n🎬 ${cd.b.title} (${cd.bYear})\nامتیاز IMDb: ${cd.bRate.toFixed(1)} | آرا: ${cd.bVotes.toLocaleString()} | جوایز: ${cd.bAwards.hasData ? cd.bAwards.wins : '—'} | نامزدی: ${cd.bAwards.hasData ? cd.bAwards.noms : '—'}${cd.bRT!==null?' | RT: '+cd.bRT+'%':''}${cd.bMeta!==null?' | MC: '+cd.bMeta:''}\n\n🏆 نتیجه: بر اساس مجموع امتیازات، آرا، جوایز و نامزدی‌ها، "${winner}" در مجموع امتیاز بالاتری دارد. البته این یک مقایسه عددی است و سلیقه شخصی در انتخاب نهایی اهمیت دارد.`;
                     } else {
-                        aiText = `📊 Data-based Analysis:\n\n🎬 ${cd.a.title} (${cd.aYear})\nIMDb: ${cd.aRate.toFixed(1)} | Votes: ${cd.aVotes.toLocaleString()} | Awards: ${cd.aAwards.wins} | Noms: ${cd.aAwards.noms}${cd.aRT!==null?' | RT: '+cd.aRT+'%':''}${cd.aMeta!==null?' | MC: '+cd.aMeta:''}\n\n🎬 ${cd.b.title} (${cd.bYear})\nIMDb: ${cd.bRate.toFixed(1)} | Votes: ${cd.bVotes.toLocaleString()} | Awards: ${cd.bAwards.wins} | Noms: ${cd.bAwards.noms}${cd.bRT!==null?' | RT: '+cd.bRT+'%':''}${cd.bMeta!==null?' | MC: '+cd.bMeta:''}\n\n🏆 Verdict: Based on combined ratings, vote counts, awards and nominations, "${winner}" scores higher overall. This is a quantitative comparison — personal taste still plays a role in your final choice.`;
+                        aiText = `📊 Data-based Analysis:\n\n🎬 ${cd.a.title} (${cd.aYear})\nIMDb: ${cd.aRate.toFixed(1)} | Votes: ${cd.aVotes.toLocaleString()} | Awards: ${cd.aAwards.hasData ? cd.aAwards.wins : '—'} | Noms: ${cd.aAwards.hasData ? cd.aAwards.noms : '—'}${cd.aRT!==null?' | RT: '+cd.aRT+'%':''}${cd.aMeta!==null?' | MC: '+cd.aMeta:''}\n\n🎬 ${cd.b.title} (${cd.bYear})\nIMDb: ${cd.bRate.toFixed(1)} | Votes: ${cd.bVotes.toLocaleString()} | Awards: ${cd.bAwards.hasData ? cd.bAwards.wins : '—'} | Noms: ${cd.bAwards.hasData ? cd.bAwards.noms : '—'}${cd.bRT!==null?' | RT: '+cd.bRT+'%':''}${cd.bMeta!==null?' | MC: '+cd.bMeta:''}\n\n🏆 Verdict: Based on combined ratings, vote counts, awards and nominations, "${winner}" scores higher overall. This is a quantitative comparison — personal taste still plays a role in your final choice.`;
                     }
                 } catch(e3) {}
             }
@@ -18922,11 +18922,43 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
 
             if (aiText && aiText.length > 20) {
                 aiText = aiText.replace(/\*\*(.*?)\*\*/g, '$1').replace(/^#{1,3}\s/gm, '').trim();
-                typeWriter(aiText, textEl, 12);
+                // FN-FIX3: show at once (typewriter took ~20s for a long answer and raced with translate).
+                window._compareAiOriginal = aiText;
+                window._compareAiTranslated = null;
+                textEl.textContent = aiText;
+                var tw = document.getElementById('compare-ai-translate-wrap'); if (tw) tw.style.display = 'block';
+                var tb = document.getElementById('compare-ai-translate-btn'); if (tb) { tb.disabled = false; tb.textContent = isFA ? '🌐 Translate to English' : '🌐 ترجمه به فارسی'; }
             } else {
                 textEl.textContent = isFA ? 'خطا در دریافت تحلیل. لطفاً دوباره تلاش کنید.' : 'Could not get AI analysis. Please try again.';
             }
         }
+        // FN-FIX3: translate the compare AI text to the other language in one tap, via Cloudflare AI.
+        window.translateCompareAI = async function() {
+            var textEl = document.getElementById('compare-ai-text');
+            var btn = document.getElementById('compare-ai-translate-btn');
+            if (!textEl || !window._compareAiOriginal) return;
+            var appFa = (typeof LANG !== 'undefined' && LANG === 'fa');
+            if (window._compareAiTranslated) {
+                textEl.textContent = window._compareAiOriginal;
+                window._compareAiTranslated = null;
+                if (btn) btn.textContent = appFa ? '🌐 Translate to English' : '🌐 ترجمه به فارسی';
+                return;
+            }
+            var toFa = !appFa;
+            if (btn) { btn.disabled = true; btn.textContent = toFa ? '⏳ در حال ترجمه...' : '⏳ Translating...'; }
+            try {
+                var prompt = toFa
+                    ? 'Translate the following film comparison analysis to fluent, natural Persian. Keep film titles in their original English form. Do not add, remove or invent facts. Keep the same structure and verdict.\n\n' + window._compareAiOriginal
+                    : 'Translate the following film comparison analysis to fluent, natural English. Keep film titles in their original form. Do not add, remove or invent facts. Keep the same structure and verdict.\n\n' + window._compareAiOriginal;
+                var tr = await _aiGenerateText(prompt, { maxTokens: 900, temperature: 0.2, timeout: 45000 });
+                if (tr && tr.trim().length > 20) {
+                    window._compareAiTranslated = tr.trim();
+                    textEl.textContent = tr.trim();
+                    if (btn) btn.textContent = toFa ? '↩️ نمایش متن اصلی' : '↩️ Show original';
+                } else if (btn) btn.textContent = toFa ? '🌐 ترجمه به فارسی (ناموفق، دوباره بزن)' : '🌐 Translate to English (failed, try again)';
+            } catch(e) { if (btn) btn.textContent = toFa ? '🌐 ترجمه ناموفق بود، دوباره تلاش کن' : '🌐 Translation failed, try again'; }
+            if (btn) btn.disabled = false;
+        };
         // =================== END AI COMPARE ===================
         function getActiveMyListData() {
             var tab = _myListCurrentTab || 'fav';
@@ -20298,7 +20330,7 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
         })();
 
         var _pLastResult = null;
-        var _P_RESULT_KEY = 'familyNight_personality_result_v3';
+        var _P_RESULT_KEY = 'familyNight_personality_result_v4_ai'; // FN-FIX3: old v3 key held canned template results; v4 holds AI results only
         var _pOpeningDetailFromPersonality = false;
 
         function _isFaText(v){ return /[\u0600-\u06FF]/.test(String(v||'')); }
@@ -21991,9 +22023,25 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
                 var total = ((_pSel.movie||[]).length + (_pSel.tv||[]).length + (_pSel.anime||[]).length);
                 if(total < 1){ alert(fa?'حداقل یک اثر انتخاب کن!':'Select at least one work!'); return; }
                 var c = byId('personality-content');
-                if(c) c.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:16px"><div style="font-size:56px;animation:brainPulse 1s infinite">🧠</div><div style="color:#cc88ff;font-size:16px;font-weight:900">'+(fa?'در حال تحلیل انتخاب‌ها...':'Analyzing your selections...')+'</div></div>';
-                await enrichSelectionsV7();
-                var result = personalityV7(fa);
+                if(c) c.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:16px"><div style="font-size:56px;animation:brainPulse 1s infinite">🧠</div><div style="color:#cc88ff;font-size:16px;font-weight:900">'+(fa?'در حال تحلیل با هوش مصنوعی...':'Analyzing with AI...')+'</div><div style="color:#888;font-size:12px;text-align:center;max-width:300px;line-height:1.7;">'+(fa?'تحلیل بر اساس انتخاب‌ها، ژانرها و حس‌وحال آثار ساخته می‌شود، نه از روی قالب آماده.':'Built from your picks, their genres and mood — not from a canned template.')+'</div></div>';
+                try { await enrichSelectionsV7(); } catch(e) {}
+                var detail = selectedAllV7().map(function(x){ return (x.title||'') + (x.year?' ('+x.year+')':'') + (x.genres?' ['+x.genres+']':'') + (x.overview?' \u2014 '+String(x.overview).slice(0,180):''); }).join(fa?'\u061b ':'; ');
+                var schema = '{"personality_type":"","personality_emoji":"","description":"","traits":["","","",""],"if_movie":{"character":"","actor":"","movie":"","year":"","reason":""},"if_series":{"character":"","actor":"","series":"","year":"","reason":""},"if_anime":{"character":"","show":"","year":"","reason":""},"top5_movies":[{"title":"","year":"","reason":""}],"top5_series":[{"title":"","year":"","reason":""}],"similar_movies":[{"title":"","year":""}],"similar_series":[{"title":"","year":""}],"similar_anime":[{"title":"","year":""}]}';
+                var prompt = (fa ? 'تو روان‌شناس سینمایی حرفه‌ای هستی. فقط JSON معتبر برگردان، بدون هیچ متن اضافه. تحلیل باید دقیقاً از همین انتخاب‌ها، ژانرها و حس‌وحال (وایب) آن‌ها بیاید: چه فضایی، چه احساسی و چه نوع داستانی دنبال می‌کند، چرا این آثار را دوست دارد، و چه چیزی او را خسته می‌کند. description باید ۳ تا ۵ جمله مشخص و شخصی باشد و نام حداقل دو اثر انتخاب‌شده را ببرد، نه جملات کلی و تکراری. traits چهار ویژگی مشخص از سلیقه او باشد. شخصیت‌ها (if_movie/if_series/if_anime) باید شخصیت‌هایی باشند که واقعاً شبیه کاربرند و reason آن‌ها را به انتخاب‌هایش وصل کند. پیشنهادها باید آثار واقعی و شناخته‌شده باشند: top5_movies دقیقاً ۵ فیلم، top5_series دقیقاً ۵ سریال، similar_movies ۳ فیلم، similar_series ۳ سریال، similar_anime ۳ انیمه/انیمیشن. هیچ‌کدام از آثار انتخاب‌شده نباشند، هیچ تکراری نداشته باشند، فقط فیلم در فیلد فیلم، فقط سریال در فیلد سریال، فقط انیمه/انیمیشن در فیلد انیمه باشد، و reason هرکدام کوتاه (زیر ۱۲ کلمه) باشد. عنوان همه آثار پیشنهادی را به انگلیسی اصلی و کامل بنویس (بدون ترکیب فارسی و انگلیسی در یک عنوان)، فقط description و reason و traits فارسی باشند، و هیچ کاراکتری از زبان دیگری (مثل چینی) نیاور.\n' : 'You are a professional cinema psychologist. Reply ONLY valid JSON, no extra text. The analysis must come exactly from these picks, their genres and their vibe/mood: what atmosphere, feeling and story type they seek, why they love these works, and what bores them. The description must be 3-5 specific, personal sentences naming at least two of the picks, not generic phrases. Traits must be four specific taste traits. The if_movie/if_series/if_anime characters must really match the user, with reasons tied to the picks. Recommendations must be real, well-known titles, NONE of the already-selected titles, no duplicates, movies only in movie fields, series only in series fields, anime/animation only in anime fields, and each reason under 12 words.\n') + 'Picks: ' + detail + '\nSchema: ' + schema;
+                var result = null;
+                try {
+                    var txt = await _aiGenerateText(prompt, { maxTokens: 2000, temperature: 0.6, expectJson: true, timeout: 60000 });
+                    result = _extractJsonObject(txt);
+                } catch(e) {}
+                if (!result || !result.personality_type) {
+                    if (c) c.innerHTML = '<div style="padding:24px;max-width:520px;margin:0 auto;text-align:center;"><div style="font-size:44px;margin-bottom:12px;">⚠️</div><div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:8px;">'+(fa?'هوش مصنوعی الان جواب نداد':'AI did not answer right now')+'</div><div style="font-size:12px;color:#999;line-height:1.8;margin-bottom:16px;">'+(fa?'انتخاب‌هایت حفظ شده. دوباره تلاش کن؛ نتیجه از روی قالب آماده ساخته نمی‌شود.':'Your picks are saved. Try again — no canned template will be used.')+'</div><button onclick="_runPAnalysis()" style="padding:14px 28px;background:linear-gradient(135deg,#7c3aed,#4c1d95);border:none;border-radius:14px;color:white;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">🔄 '+(fa?'تلاش مجدد':'Try again')+'</button></div>';
+                    return;
+                }
+                result.top5_movies = _pDedup(result.top5_movies || [], 'title').slice(0,5);
+                result.top5_series = _pDedup(result.top5_series || [], 'title').slice(0,5);
+                result.similar_movies = _pDedup(result.similar_movies || [], 'title').slice(0,4);
+                result.similar_series = _pDedup(result.similar_series || [], 'title').slice(0,4);
+                result.similar_anime = _pDedup(result.similar_anime || [], 'title').slice(0,4);
                 try { _pSaveResult(result); } catch(e) {}
                 await _renderPResult(result, fa);
             };
@@ -22007,7 +22055,7 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
                             var c=byId('personality-content'); if(!c) return;
                             var txt=clean(c.textContent||'');
                             if((!isFa() && /[\u0600-\u06FF]/.test(txt)) || (isFa() && /YOUR CINEMA TYPE/.test(txt))){
-                                var r = personalityV7(isFa()); _pSaveResult(r); _renderPResult(r, isFa());
+                                // FN-FIX3: never rebuild with a canned template; the user re-runs the AI analysis instead.
                             }
                         } catch(e) {}
                     }, 120);
@@ -24702,11 +24750,17 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
   }
   async function fetchOmdb(imdbId){
     if (!imdbId) return null;
-    try { var c = localStorage.getItem('fn_omdb_awards_' + imdbId); if (c) return JSON.parse(c); } catch(e) {}
-    try {
-      var r = await fetch('https://www.omdbapi.com/?i=' + encodeURIComponent(imdbId) + '&apikey=f6dd47c8');
-      if (r && r.ok) { var d = await r.json(); try { localStorage.setItem('fn_omdb_awards_' + imdbId, JSON.stringify(d)); } catch(e2){} return d; }
-    } catch(e) {}
+    try { var c = localStorage.getItem('fn_omdb_awards_' + imdbId); if (c) { var pc = JSON.parse(c); if (pc && pc.Response === 'True') return pc; } } catch(e) {}
+    // FN-FIX3: worker proxy first (server-side key, works in Iran); direct OMDb only as fallback.
+    // The old code fetched OMDb with an empty/dead key, so every title showed 0 awards.
+    var urls = ['https://family-night-api.alirezadoe8.workers.dev/v1/omdb?i=' + encodeURIComponent(imdbId),
+                'https://www.omdbapi.com/?i=' + encodeURIComponent(imdbId) + '&apikey=trilogy'];
+    for (var ui = 0; ui < urls.length; ui++) {
+      try {
+        var r = await fetch(urls[ui]);
+        if (r && r.ok) { var d = await r.json(); if (d && d.Response === 'True') { try { localStorage.setItem('fn_omdb_awards_' + imdbId, JSON.stringify(d)); } catch(e2){} return d; } }
+      } catch(e) {}
+    }
     return null;
   }
   async function ensureFullData(item){
@@ -24721,7 +24775,7 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
   }
   function imdbId(d){ return d && d.external_ids && d.external_ids.imdb_id ? d.external_ids.imdb_id : ''; }
   function runtime(d){ return d && (Number(d.runtime)|| (d.episode_run_time && Number(d.episode_run_time[0])) || 0); }
-  function awards(imdb, omdb){ var a = parseAwards(omdb && omdb.Awards); if ((!a.wins && !a.noms) && imdb && knownAwards[imdb]) a = knownAwards[imdb]; return {wins:Number(a.wins)||0,noms:Number(a.noms)||0}; }
+  function awards(imdb, omdb){ var hasOmdb = !!(omdb && omdb.Response === 'True' && omdb.Awards && omdb.Awards !== 'N/A'); var a = parseAwards(omdb && omdb.Awards); var hasKnown = (!a.wins && !a.noms) && imdb && knownAwards[imdb]; if (hasKnown) a = knownAwards[imdb]; return {wins:Number(a.wins)||0,noms:Number(a.noms)||0,hasData:!!(hasOmdb || hasKnown)}; }
   function rt(omdb){ var r = omdb && omdb.Ratings && omdb.Ratings.find(function(x){ return x.Source === 'Rotten Tomatoes'; }); return r ? parseInt(r.Value,10) : null; }
   function meta(omdb){ return omdb && omdb.Metascore && omdb.Metascore !== 'N/A' ? parseInt(omdb.Metascore,10) : null; }
   function posterUrl(d){ var base = (typeof IMG_LG !== 'undefined' ? IMG_LG : 'https://family-night-api.alirezadoe8.workers.dev/img/w500'); return d && d.poster_path ? base + d.poster_path : ''; }
@@ -24760,10 +24814,10 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
         ((aru||bru) ? row('⏱️ '+(fa?'مدت':'Runtime'), aru?aru+'min':'—', bru?bru+'min':'—', aru >= bru) : '')+
         ((art!==null||brt!==null) ? cell('🍅 Rotten Tomatoes', colorRT(art), false).replace(/style="color:#888;"/,'') + cell('🍅 Rotten Tomatoes', colorRT(brt), false).replace(/style="color:#888;"/,'') : '')+
         ((amet!==null||bmet!==null) ? cell('🎯 Metacritic', colorMeta(amet), false).replace(/style="color:#888;"/,'') + cell('🎯 Metacritic', colorMeta(bmet), false).replace(/style="color:#888;"/,'') : '')+
-        row('🏆 '+(fa?'جوایز کسب‌شده':'Awards Won'), String(aa.wins), String(ba.wins), aa.wins >= ba.wins)+
-        row('🎖️ '+(fa?'نامزدی‌ها':'Nominations'), String(aa.noms), String(ba.noms), aa.noms >= ba.noms)+
-        '<div class="compare-awards-source">'+(fa?'منبع جوایز: OMDb/IMDb summary؛ اگر در دسترس نباشد برای آثار شناخته‌شده از داده پشتیبان داخلی استفاده می‌شود.':'Awards source: OMDb/IMDb summary; if unavailable, known titles use an internal fallback.')+'</div>'+
-        '<div style="grid-column:1/-1;padding:16px;"><button id="compare-ai-btn" onclick="runCompareAI()" style="width:100%;padding:14px;background:linear-gradient(135deg,#1a0a33,#3a1070);border:1px solid rgba(168,85,247,0.4);border-radius:14px;color:white;font-size:14px;font-weight:bold;cursor:pointer;font-family:\'Vazirmatn\',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;transition:0.2s;"><div style="width:22px;height:22px;background:linear-gradient(135deg,#7c3aed,#4285f4,#06b6d4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:bold;">✦</div>'+(fa?'از هوش مصنوعی بپرس کدام بهتره؟':'Ask AI: Which one is better?')+'</button><div id="compare-ai-result" style="display:none;margin-top:14px;padding:14px;background:rgba(100,50,200,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:12px;"><div style="font-size:11px;color:#a855f7;margin-bottom:8px;display:flex;align-items:center;gap:6px;"><div style="width:16px;height:16px;background:linear-gradient(135deg,#7c3aed,#4285f4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:white;">✦</div>'+(fa?'نظر هوش مصنوعی':'AI Analysis')+'</div><div id="compare-ai-text" style="font-size:13px;color:#e0e0e0;line-height:1.8;white-space:pre-wrap;"></div></div></div>';
+        row('🏆 '+(fa?'جوایز کسب‌شده':'Awards Won'), aa.hasData ? String(aa.wins) : '—', ba.hasData ? String(ba.wins) : '—', (aa.hasData && ba.hasData) ? aa.wins >= ba.wins : false)+
+        row('🎖️ '+(fa?'نامزدی‌ها':'Nominations'), aa.hasData ? String(aa.noms) : '—', ba.hasData ? String(ba.noms) : '—', (aa.hasData && ba.hasData) ? aa.noms >= ba.noms : false)+
+        '<div class="compare-awards-source">'+(fa?'منبع جوایز: OMDb/IMDb summary.':'Awards source: OMDb/IMDb summary.')+((!aa.hasData || !ba.hasData) ? (fa?' اثری که هنوز داده جوایز ندارد با \u2014 نشان داده می‌شود، نه صفر.':' Titles with no awards data yet show \u2014, not 0.') : '')+'</div>'+
+        '<div style="grid-column:1/-1;padding:16px;"><button id="compare-ai-btn" onclick="runCompareAI()" style="width:100%;padding:14px;background:linear-gradient(135deg,#1a0a33,#3a1070);border:1px solid rgba(168,85,247,0.4);border-radius:14px;color:white;font-size:14px;font-weight:bold;cursor:pointer;font-family:\'Vazirmatn\',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;transition:0.2s;"><div style="width:22px;height:22px;background:linear-gradient(135deg,#7c3aed,#4285f4,#06b6d4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:bold;">✦</div>'+(fa?'از هوش مصنوعی بپرس کدام بهتره؟':'Ask AI: Which one is better?')+'</button><div id="compare-ai-result" style="display:none;margin-top:14px;padding:14px;background:rgba(100,50,200,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:12px;"><div style="font-size:11px;color:#a855f7;margin-bottom:8px;display:flex;align-items:center;gap:6px;"><div style="width:16px;height:16px;background:linear-gradient(135deg,#7c3aed,#4285f4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:white;">✦</div>'+(fa?'نظر هوش مصنوعی':'AI Analysis')+'</div><div id="compare-ai-text" style="font-size:13px;color:#e0e0e0;line-height:1.8;white-space:pre-wrap;"></div></div><div id="compare-ai-translate-wrap" style="display:none;margin-top:10px;text-align:center;"><button id="compare-ai-translate-btn" onclick="translateCompareAI()" style="padding:10px 18px;background:#1a1a2a;border:1px solid rgba(168,85,247,0.4);border-radius:999px;color:#e0e0e0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">'+(fa?'🌐 Translate to English':'🌐 ترجمه به فارسی')+'</button></div></div>';
       compareItems = [];
       window._compareDataForAI = { a:a, b:b, aData:ad, bData:bd, aRate:ar, bRate:br, aVotes:av, bVotes:bv, aRuntime:aru, bRuntime:bru, aAwards:aa, bAwards:ba, aRT:art, bRT:brt, aMeta:amet, bMeta:bmet, aYear:ay, bYear:by };
     };
