@@ -6350,6 +6350,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
         // CONFIG
         const API = 'a707340a9f22632205846e9115f0dfd5';
         const BASE = (window.location.hostname.indexOf('workers.dev') !== -1) ? (window.location.origin + '/api/tmdb') : 'https://family-night-api.alirezadoe8.workers.dev/v1/tmdb';
+        const FN_AI_URL = 'https://family-night-api.alirezadoe8.workers.dev/v1/ai/chat'; // FN-CF-AI: Cloudflare AI first for every app AI box
 
         // ===== MULTI-PROXY FALLBACK LIST (فقط برای سرویس‌های non-TMDB) =====
         const PROXIES = [
@@ -8005,10 +8006,13 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
                 const genreMap = {28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Crime',99:'Documentary',18:'Drama',10751:'Family',14:'Fantasy',36:'History',27:'Horror',10402:'Music',9648:'Mystery',10749:'Romance',878:'Sci-Fi',10770:'TV Movie',53:'Thriller',10752:'War',37:'Western'};
                 const genres = (m.genre_ids || []).slice(0,2).map(g => genreMap[g] || '').filter(Boolean).join(' · ');
                 const overview = (m.overview || '').substring(0, 90) + ((m.overview||'').length > 90 ? '...' : '');
+                const _bgUrl = IMG_BG.replace('/w1280', '/w780') + m.backdrop_path;
+                const _isNear = (i === 0 || i === carouselData.length - 1 || i === 1);
                 return `
                     <div class="slide ${i === 0 ? 'active' : ''}" id="slide-${i}"
                          onclick="openCarouselItem(${i})"
-                         style="background-image: url(${IMG_BG + m.backdrop_path});">
+                         data-bg="${_bgUrl}"
+                         style="${_isNear ? 'background-image: url(' + _bgUrl + ');' : ''}">
                         <div class="hero-card-hint">${LANG === 'fa' ? 'برای جزئیات لمس کن' : 'Tap for details'}</div>
                         <div class="slide-overlay">
                             <div class="slide-title">${title}</div>
@@ -8067,6 +8071,11 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
                 else if (i === prevIdx) s.classList.add('prev');
                 else if (i === nextIdx) s.classList.add('next');
                 else s.classList.add('hidden-card');
+                // FN-HERO: only visible deck cards fetch their backdrop; hidden slides
+                // load theirs when they rotate into active/prev/next (no 20x w1280 burst).
+                if ((i === curSlideIdx || i === prevIdx || i === nextIdx) && s.dataset.bg && !s.style.backgroundImage) {
+                    s.style.backgroundImage = 'url(' + s.dataset.bg + ')';
+                }
             });
             document.querySelectorAll('.hero-dot').forEach((d, i) => d.classList.toggle('active', i === curSlideIdx));
         }
@@ -14440,6 +14449,8 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
                 return null;
             }
 
+            // FN-CF-AI: Cloudflare first, then Pollinations below (kept as backup).
+            try { var cfT = await _aiGenerateText(prompt, { maxTokens: 2000, temperature: 0.1, timeout: 25000 }); var cfR = parseResult(cfT); if (cfR) return cfR; } catch(eCF) {}
             // METHOD 1: Pollinations GET
             try {
                 var r = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt) + '?model=openai-large&seed=7&nologo=true', { signal: AbortSignal.timeout(25000) });
@@ -16438,6 +16449,12 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
             opts = opts || {};
             var payload = { model: opts.model || 'openai-large', messages: [{ role: 'user', content: prompt }], max_tokens: opts.maxTokens || 900, temperature: (typeof opts.temperature === 'number' ? opts.temperature : 0.65) };
             if (opts.expectJson) payload.response_format = { type: 'json_object' };
+            // FN-CF-AI: Cloudflare AI first (family-night-api, Llama 70B then 8B).
+            // On any failure/empty answer, fall through to Pollinations below, kept as backup.
+            try {
+                var cf = await fetch(FN_AI_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ prompt: prompt, max_tokens: opts.maxTokens || 900, temperature: (typeof opts.temperature === 'number' ? opts.temperature : 0.65) }), signal:_aiTimeoutSignal(opts.timeout || 40000) });
+                if (cf.ok) { var cd = await cf.json(); var ct = cd && cd.text; if (ct && ct.trim().length > 8) return ct.trim(); }
+            } catch(e0) {}
             try {
                 var r = await fetch('https://text.pollinations.ai/openai', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload), signal:_aiTimeoutSignal(opts.timeout || 26000) });
                 if (r.ok) { var d = await r.json(); var t = d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content; if (t && t.trim().length > 8) return t.trim(); }
@@ -18855,8 +18872,10 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
 
             let aiText = null;
 
-            // Method 1: Pollinations GET
-            try {
+            // FN-CF-AI: Cloudflare first, then Pollinations below (kept as backup).
+            try { const cfT = await _aiGenerateText(prompt, { maxTokens: 700, temperature: 0.7, timeout: 20000 }); if (cfT && cfT.length > 30) aiText = cfT; } catch(eCF) {}
+            // Method 1: Pollinations GET (only if Cloudflare gave nothing)
+            if (!aiText) try {
                 const ctrl = new AbortController();
                 const tid = setTimeout(() => ctrl.abort(), 20000);
                 const r = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt) + '?model=openai-large&seed=42&nologo=true', { signal: ctrl.signal });
@@ -19182,7 +19201,7 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
                     ${dlBadgeHtml}
                     ${trendingHtml}
                     ${myRatingHtml}
-                    <img src="${IMG+m.poster_path}" class="poster" loading="lazy">
+                    <img src="${IMG+m.poster_path}" class="poster" loading="lazy" onerror="if(!this.dataset.fnRetry){this.dataset.fnRetry=1;var _s=this.src;this.src='';var _t=this;setTimeout(function(){_t.src=_s;},700);}">
                     <div class="meta-info">
                         <div class="meta-title">${classicIranFlag}${title}</div>
                         ${metaSubHtml}
