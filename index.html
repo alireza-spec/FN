@@ -8076,6 +8076,10 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
                 if ((i === curSlideIdx || i === prevIdx || i === nextIdx) && s.dataset.bg && !s.style.backgroundImage) {
                     s.style.backgroundImage = 'url(' + s.dataset.bg + ')';
                 }
+                // FN-FIX2: preload the slide after next, so the next rotation already has its image.
+                if (i === (nextIdx + 1) % total && s.dataset.bg && !s.style.backgroundImage) {
+                    var _pre = new Image(); _pre.src = s.dataset.bg;
+                }
             });
             document.querySelectorAll('.hero-dot').forEach((d, i) => d.classList.toggle('active', i === curSlideIdx));
         }
@@ -14450,7 +14454,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
             }
 
             // FN-CF-AI: Cloudflare first, then Pollinations below (kept as backup).
-            try { var cfT = await _aiGenerateText(prompt, { maxTokens: 2000, temperature: 0.1, timeout: 25000 }); var cfR = parseResult(cfT); if (cfR) return cfR; } catch(eCF) {}
+            try { var cfT = await _aiGenerateText(prompt, { maxTokens: 2000, temperature: 0.1, timeout: 45000 }); var cfR = parseResult(cfT); if (cfR) return cfR; } catch(eCF) {}
             // METHOD 1: Pollinations GET
             try {
                 var r = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt) + '?model=openai-large&seed=7&nologo=true', { signal: AbortSignal.timeout(25000) });
@@ -16452,7 +16456,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
             // FN-CF-AI: Cloudflare AI first (family-night-api, Llama 70B then 8B).
             // On any failure/empty answer, fall through to Pollinations below, kept as backup.
             try {
-                var cf = await fetch(FN_AI_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ prompt: prompt, max_tokens: opts.maxTokens || 900, temperature: (typeof opts.temperature === 'number' ? opts.temperature : 0.65) }), signal:_aiTimeoutSignal(opts.timeout || 40000) });
+                var cf = await fetch(FN_AI_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ prompt: prompt, max_tokens: opts.maxTokens || 900, temperature: (typeof opts.temperature === 'number' ? opts.temperature : 0.65) }), signal:_aiTimeoutSignal(Math.max(opts.timeout || 0, 45000)) }); // FN-FIX2: 24s aborted long Persian answers on slow edges
                 if (cf.ok) { var cd = await cf.json(); var ct = cd && cd.text; if (ct && ct.trim().length > 8) return ct.trim(); }
             } catch(e0) {}
             try {
@@ -18873,7 +18877,7 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
             let aiText = null;
 
             // FN-CF-AI: Cloudflare first, then Pollinations below (kept as backup).
-            try { const cfT = await _aiGenerateText(prompt, { maxTokens: 700, temperature: 0.7, timeout: 20000 }); if (cfT && cfT.length > 30) aiText = cfT; } catch(eCF) {}
+            try { const cfT = await _aiGenerateText(prompt, { maxTokens: 700, temperature: 0.7, timeout: 45000 }); if (cfT && cfT.length > 30) aiText = cfT; } catch(eCF) {}
             // Method 1: Pollinations GET (only if Cloudflare gave nothing)
             if (!aiText) try {
                 const ctrl = new AbortController();
@@ -25549,7 +25553,7 @@ window.FNWatchParty={openHub:hub,close:close,hub:hub,createForm:createForm,start
     if(S.answerCache.has(key))return S.answerCache.get(key);
     var reqId=S.id, reqLang=fa();
     var sys=(fa()?'تو دستیار تخصصی سینما هستی. همیشه یک پاسخ مستقیم و مفید بده. هرگز سؤال روشن‌سازی نپرس، هرگز نگو «موضوع را مشخص کن» یا مشابه آن، و هرگز پاسخ را خالی نگذار. فقط و فقط دربارهٔ اثری صحبت کن که مشخصاتش (شناسه TMDB، سال) در پایین آمده — نه اثر دیگری. پاسخ باید کاملاً فارسی و مفید باشد. اگر جزئیاتی مطمئن نیست صادقانه بگو، ولی هرگز داستان نساز.':'You are a specialized cinema assistant. Always give a direct, useful answer. Never ask a clarifying question, never say things like "please specify the topic", and never leave the answer empty. Only discuss the exact title whose data (TMDB ID, year) is given below — never a different title. Answer in clear English. If a detail is uncertain, honestly say so, but never invent plot details.')+'\n\n'+facts()+'\n\nUser question: '+q;
-    var models=['openai-large','openai'];
+    var models=['openai-large']; // FN-FIX2: _aiGenerateText already tries Cloudflare then Pollinations; a second model loop only doubled the wait
     for(var attempt=0;attempt<models.length;attempt++){
       try{
         var out=await _aiGenerateText(sys,{model:models[attempt],maxTokens:1100,temperature:0.35,timeout:24000});
