@@ -2,8 +2,13 @@
 <html lang="fa" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#15171a">
+    <meta name="description" content="Family Night: discover movies, series and anime, compare titles, analyze your cinema personality, and keep your favorites and watch history.">
+    <meta property="og:title" content="Family Night">
+    <meta property="og:description" content="Discover movies, series and anime, compare titles, and analyze your cinema personality.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="icons/icon-512.png">
     <meta name="color-scheme" content="dark light">
     <style id="fn-dark-grey-first-paint">
         html, body { background:#15171a; }
@@ -24,7 +29,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <title>Family Night Ultimate v37 Restored Safe Themes</title>
+    <title>Family Night v41.0.0</title>
     <!-- DNS Prefetch & Preconnect for faster API/image loads -->
     <link rel="preconnect" href="https://family-night-api.alirezadoe8.workers.dev" crossorigin>
     <link rel="preconnect" href="https://family-night-api.alirezadoe8.workers.dev" crossorigin>
@@ -5490,7 +5495,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
                 <div class="setting-section">
                     <div class="setting-header" id="txt-about-head">About</div>
                     <div class="dev-info">
-                        <p style="margin-bottom:10px;"><strong id="txt-desc-t">Family Night v26.1.1</strong></p>
+                        <p style="margin-bottom:10px;"><strong id="txt-desc-t">Family Night v41.0.0</strong></p>
                         <p id="txt-desc-b">The ultimate streaming experience. High-quality movies and series at your fingertips.</p>
                         <br>
                         <p id="txt-copy">© 2025 Game of family. All rights reserved.</p>
@@ -26102,6 +26107,125 @@ function exit(){var f=document.exitFullscreen||document.webkitExitFullscreen||do
 window.toggleAppFullscreen=function(){if(current()){exit();return}expand();req(document.documentElement).catch(function(){expand()})};
 function icons(){var on=!!current();document.querySelectorAll('[onclick="toggleAppFullscreen()"],.page-header-fs').forEach(function(b){if(b.tagName==='I')b.className=on?'fa-solid fa-compress':'fa-solid fa-expand'});var b=document.getElementById('app-fs-btn');if(b){b.className=on?'fa-solid fa-compress':'fa-solid fa-expand';b.style.color=on?'var(--primary)':'#aaa'}}
 document.addEventListener('fullscreenchange',icons);document.addEventListener('webkitfullscreenchange',icons);window.addEventListener('pageshow',icons);
+})();
+</script>
+<script>
+// FN-v41: single version, local error log, backup timestamp, personalized home row.
+// This block runs last on purpose: it wins over the older version strings
+// (v37 title, v26 footer, v40 patch) without editing dozens of patch blocks.
+(function(){
+  'use strict';
+  var FN_VER41 = 'v41.0.0';
+  window.FN_APP_VERSION = FN_VER41;
+  function fnIsFa(){ try { return (typeof LANG !== 'undefined' ? LANG : (localStorage.getItem('lang') || 'fa')) === 'fa'; } catch(e){ return true; } }
+  function applyFnVersion(){
+    try {
+      document.title = 'Family Night ' + FN_VER41;
+      document.querySelectorAll('.fn-about-version').forEach(function(el){ el.textContent = '🚀 Family Night ' + FN_VER41; });
+      var t = document.getElementById('txt-desc-t'); if (t) t.textContent = 'Family Night ' + FN_VER41;
+      document.querySelectorAll('[data-fn-version], .fn-app-version, #fn-app-version').forEach(function(el){ el.textContent = FN_VER41; });
+    } catch(e){}
+  }
+  // Local error log (never sent anywhere): message only, keys stripped.
+  window.fnErrorLogPush = function(msg, src){
+    try {
+      var log = JSON.parse(localStorage.getItem('fn_error_log_v1') || '[]');
+      if (!Array.isArray(log)) log = [];
+      var clean = String(msg || '').replace(/api_key=[^&\s]+/gi, 'api_key=***').replace(/apikey=[^&\s]+/gi, 'apikey=***').slice(0, 300);
+      log.unshift({ t: new Date().toISOString(), m: clean, s: String(src || '').slice(0, 200) });
+      localStorage.setItem('fn_error_log_v1', JSON.stringify(log.slice(0, 20)));
+    } catch(e){}
+  };
+  window.addEventListener('error', function(e){ window.fnErrorLogPush(e.message || 'error', e.filename || ''); });
+  window.addEventListener('unhandledrejection', function(e){ var r = e.reason; window.fnErrorLogPush((r && (r.message || r)) || 'unhandled rejection', 'promise'); });
+  window.fnCopyErrorLog = function(){
+    var fa = fnIsFa(), log = '';
+    try { log = localStorage.getItem('fn_error_log_v1') || '[]'; } catch(e){}
+    if (!log || log === '[]') { alert(fa ? 'خطایی ثبت نشده است.' : 'No errors recorded.'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(log).then(function(){ alert(fa ? 'گزارش خطاها کپی شد.' : 'Error log copied.'); }, function(){ alert(log); });
+    } else { alert(log); }
+  };
+  function fnInjectAboutExtras(){
+    try {
+      var dev = document.querySelector('.dev-info');
+      if (!dev || document.getElementById('fn-v41-extras')) return;
+      var fa = fnIsFa(), last = 0;
+      try { last = Number(localStorage.getItem('fn_backup_last_export') || 0) || 0; } catch(e){}
+      var lastTxt = last ? new Date(last).toLocaleDateString(fa ? 'fa-IR' : 'en-US') : (fa ? 'هرگز' : 'never');
+      var div = document.createElement('div');
+      div.id = 'fn-v41-extras';
+      div.style.cssText = 'margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.12);';
+      div.innerHTML = '<p style="font-size:12px;color:#aaa;margin-bottom:8px;">' + (fa ? 'آخرین پشتیبان: ' : 'Last backup: ') + lastTxt + '</p>' +
+        '<button onclick="fnCopyErrorLog()" style="padding:9px 14px;background:#1a1a2a;border:1px solid rgba(255,255,255,0.2);border-radius:999px;color:#ddd;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">' + (fa ? '📋 کپی گزارش خطاها' : '📋 Copy error log') + '</button>';
+      dev.appendChild(div);
+    } catch(e){}
+  }
+  // Remember when a backup was exported, so the About section can show it.
+  try {
+    if (typeof exportFNBackup === 'function' && !exportFNBackup.__fnWrapped) {
+      var _origExport = exportFNBackup;
+      var wrapped = function(){ var r = _origExport.apply(this, arguments); try { localStorage.setItem('fn_backup_last_export', String(Date.now())); } catch(e){} return r; };
+      wrapped.__fnWrapped = true; window.exportFNBackup = wrapped;
+    }
+  } catch(e){}
+  // Personalized home row: genres of the user's own favorites, not a generic row.
+  var _foryouToken = 0;
+  async function insertForYouRow(){
+    var myToken = ++_foryouToken;
+    try {
+      var c = document.getElementById('home-content');
+      if (!c || document.getElementById('foryou-section')) return;
+      var favs = [];
+      try { favs = JSON.parse(localStorage.getItem('family_favs_v2') || '[]') || []; } catch(e){}
+      if (!favs.length || typeof getData !== 'function' || typeof makeCard !== 'function') return;
+      var info = {}, typeCounts = { movie: 0, tv: 0 };
+      for (var i = 0; i < Math.min(favs.length, 10); i++) {
+        if (myToken !== _foryouToken) return;
+        var f = favs[i], mt = (f.type === 'tv') ? 'tv' : 'movie';
+        try {
+          var d = await getData(mt + '/' + f.id);
+          if (d && d.genres) { typeCounts[mt]++; d.genres.forEach(function(g){ var k = mt + ':' + g.id; if (!info[k]) info[k] = { id: g.id, name: g.name, count: 0 }; info[k].count++; }); }
+        } catch(e){}
+      }
+      if (myToken !== _foryouToken) return;
+      var type = (typeCounts.tv > typeCounts.movie) ? 'tv' : 'movie';
+      var top = Object.keys(info).filter(function(k){ return k.indexOf(type + ':') === 0; }).map(function(k){ return info[k]; }).sort(function(a, b){ return b.count - a.count; });
+      if (!top.length) return;
+      var picked = top.slice(0, 2);
+      var genreIds = picked.map(function(g){ return g.id; }).join(',');
+      var genreNames = picked.map(function(g){ return g.name; }).join('، ');
+      var fa = fnIsFa();
+      var title = fa ? '🎯 بر اساس علاقه‌مندی‌هایت' + (genreNames ? ' (' + genreNames + ')' : '') : '🎯 Based on your favorites' + (genreNames ? ' (' + genreNames + ')' : '');
+      var q = 'discover/' + type + '?with_genres=' + genreIds + '&sort_by=popularity.desc&vote_count.gte=50&include_adult=false';
+      var res = await getData(q);
+      if (myToken !== _foryouToken) return;
+      var favIds = {};
+      favs.forEach(function(x){ favIds[String(x.id)] = true; });
+      var items = (res && res.results ? res.results : []).filter(function(m){ return !favIds[String(m.id)] && (m.vote_average > 0 || String(m.release_date || m.first_air_date || '').indexOf('2026') === 0); }).slice(0, 20);
+      if (!items.length || document.getElementById('foryou-section')) return;
+      var sec = document.createElement('div');
+      sec.className = 'section'; sec.id = 'foryou-section';
+      var safeTitle = title.replace(/'/g, "\\'");
+      var safeQ = q.replace(/'/g, "\\'");
+      sec.innerHTML = '<div class="sec-head"><span class="sec-title"><span>' + title.replace(/</g, '&lt;') + '</span></span><span class="sec-more" onclick="openGenericGrid(\'' + type + '\', \'' + safeQ + '\', \'' + safeTitle + '\')">' + (fa ? 'مشاهده همه' : 'See all') + '</span></div><div class="row-scroll" id="row-foryou"></div>';
+      var first = c.querySelector('.section');
+      if (first) c.insertBefore(sec, first); else c.appendChild(sec);
+      var row = document.getElementById('row-foryou');
+      items.forEach(function(m){ try { row.innerHTML += makeCard(m, type); } catch(e){} });
+    } catch(e){}
+  }
+  try {
+    if (typeof window.renderHome === 'function' && !window.renderHome.__fnPersonalized) {
+      var _origHome = window.renderHome;
+      var wrappedHome = function(){ var r = _origHome.apply(this, arguments); setTimeout(insertForYouRow, 300); return r; };
+      wrappedHome.__fnPersonalized = true; window.renderHome = wrappedHome;
+    }
+  } catch(e){}
+  applyFnVersion(); fnInjectAboutExtras();
+  document.addEventListener('DOMContentLoaded', function(){ applyFnVersion(); fnInjectAboutExtras(); });
+  window.addEventListener('load', function(){ applyFnVersion(); fnInjectAboutExtras(); });
+  setTimeout(applyFnVersion, 1500); setTimeout(applyFnVersion, 3000);
 })();
 </script>
 </body>
