@@ -3,7 +3,7 @@
 // The cache is ONLY used as a fallback when there's no internet connection,
 // so users never get stuck seeing an old cached version while online.
 
-const CACHE_NAME = 'family-night-v3';
+const CACHE_NAME = 'family-night-v4';
 const CORE_ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', (event) => {
