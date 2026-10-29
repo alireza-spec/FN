@@ -6349,7 +6349,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
     <script>
         // CONFIG
         const API = 'a707340a9f22632205846e9115f0dfd5';
-        const BASE = 'https://api.themoviedb.org/3';
+        const BASE = (window.location.hostname.indexOf('workers.dev') !== -1) ? (window.location.origin + '/api/tmdb') : 'https://family-night-api.alirezadoe8.workers.dev/v1/tmdb';
 
         // ===== MULTI-PROXY FALLBACK LIST (فقط برای سرویس‌های non-TMDB) =====
         const PROXIES = [
@@ -6363,7 +6363,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
 
         // ===== SMART CACHE SYSTEM (کش هوشمند) =====
         const CACHE_PREFIX = 'fn_cache_';
-        const CACHE_TTL = 30 * 60 * 1000; // 30 minutes fresh
+        const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours fresh
         const CACHE_STALE_TTL = 24 * 60 * 60 * 1000; // 24h stale (for offline fallback)
 
         function _cacheGet(key) {
@@ -6422,7 +6422,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
 
         // ===== FETCH - TMDB مستقیم، بقیه با proxy fallback =====
         async function _fetchWithFallback(finalUrl) {
-            const isTMDB = finalUrl.includes('api.themoviedb.org');
+            const isTMDB = finalUrl.includes('api.themoviedb.org') || finalUrl.includes('family-night-api.alirezadoe8.workers.dev') || finalUrl.indexOf('/api/tmdb') !== -1;
             
             if (isTMDB) {
                 // TMDB از CORS پشتیبانی می‌کنه — مستقیم و سریع
@@ -6471,7 +6471,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
         const TMDB_IMG_BASE = 'https://family-night-api.alirezadoe8.workers.dev/img';
         const IMG = TMDB_IMG_BASE + '/w200';
         const IMG_LG = TMDB_IMG_BASE + '/w500';
-        const IMG_BG = TMDB_IMG_BASE + '/original';
+        const IMG_BG = TMDB_IMG_BASE + '/w1280';
         
         const FAV_KEY = 'family_favs_v2';
         const MIN_VOTES = 100;
@@ -6917,7 +6917,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
         async function getData(url) {
             const sep = url.includes('?') ? '&' : '?';
             const langParam = LANG === 'fa' ? 'fa-IR' : 'en-US';
-            const finalUrl = `${BASE}/${url}${sep}api_key=${API}&language=${langParam}`;
+            const apiParam = (BASE.indexOf('/api/tmdb') !== -1) ? ('api_key=' + encodeURIComponent(API) + '&') : ''; const finalUrl = `${BASE}/${url}${sep}${apiParam}language=${langParam}`;
             const cacheKey = url + '_' + langParam;
 
             // 1) Check fresh cache
@@ -6933,9 +6933,9 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
             try {
                 const data = await _fetchWithFallback(finalUrl);
                 // In FA mode: merge EN titles so cards always show English for non-Persian/Arabic titles
-                if (LANG === 'fa' && data && data.results && data.results.length > 0) {
+                if (false && LANG === 'fa' && data && data.results && data.results.length > 0) { // FN-FAST: lists use the cached FA response only; EN merge doubled every TMDB call
                     try {
-                        const enUrl = `${BASE}/${url}${sep}api_key=${API}&language=en-US`;
+                        const enUrl = `${BASE}/${url}${sep}language=en-US`;
                         const enData = await _fetchWithFallback(enUrl);
                         if (enData && enData.results) {
                             const enMap = {};
@@ -6970,7 +6970,7 @@ body.theme-light #fn-country-page .fn-country-select,body[data-theme="day"] #fn-
         // تابع مخصوص برای دریافت ویدیو/تریلر - همیشه انگلیسی
         async function getDataEN(url) {
             const sep = url.includes('?') ? '&' : '?';
-            const finalUrl = `${BASE}/${url}${sep}api_key=${API}&language=en-US`;
+            const apiParam = (BASE.indexOf('/api/tmdb') !== -1) ? ('api_key=' + encodeURIComponent(API) + '&') : ''; const finalUrl = `${BASE}/${url}${sep}${apiParam}language=en-US`;
             const cacheKey = url + '_en-US';
 
             const cached = _cacheGet(cacheKey);
@@ -25009,7 +25009,7 @@ Analyze the pros and cons of each, for whom each is better, and give your overal
   function resolveImdb(tmdbId,type){
     if(!tmdbId||(type!=='movie'&&type!=='tv'))return Promise.resolve('');var key=type+':'+tmdbId;if(fnImdbCache[key])return Promise.resolve(fnImdbCache[key]);
     var m=document.documentElement.innerHTML.match(/const\s+API\s*=\s*['\"]([^'\"]+)['\"]/);if(!m)return Promise.resolve('');
-    return fetch('https://api.themoviedb.org/3/'+type+'/'+encodeURIComponent(tmdbId)+'/external_ids?api_key='+encodeURIComponent(m[1])).then(function(r){return r.ok?r.json():{};}).then(function(d){var x=(d&&d.imdb_id||'').toLowerCase();fnImdbCache[key]=/^tt\d+$/.test(x)?x:'';return fnImdbCache[key];}).catch(function(){return '';});
+    return fetch('https://family-night-api.alirezadoe8.workers.dev/v1/tmdb/'+type+'/'+encodeURIComponent(tmdbId)+'/external_ids').then(function(r){return r.ok?r.json():{};}).then(function(d){var x=(d&&d.imdb_id||'').toLowerCase();fnImdbCache[key]=/^tt\d+$/.test(x)?x:'';return fnImdbCache[key];}).catch(function(){return '';});
   }
   function getIndex(){if(fnDlIndex)return Promise.resolve(fnDlIndex);if(!fnDlIndexPromise)fnDlIndexPromise=fetch(FN_DL_BASE+'download-index.json',{cache:'force-cache'}).then(function(r){if(!r.ok)throw Error('index');return r.json();}).then(function(x){fnDlIndex=x||{};return fnDlIndex;});return fnDlIndexPromise;}
   function loadPart(part){if(fnDlParts[part])return Promise.resolve(fnDlParts[part]);var n=Number(part);if(n!==1&&n!==2&&n!==3)return Promise.reject(Error('archive part'));var file='archive-part-'+n+'.html';return fetch(FN_DL_BASE+file,{cache:'force-cache'}).then(function(r){if(!r.ok)throw Error('archive');return r.text();}).then(function(t){var d=new DOMParser().parseFromString(t,'text/html');fnDlParts[n]=d;return d;});}
