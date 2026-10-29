@@ -1,7 +1,7 @@
 
 /* ===== v40.10.10 Settings accordion/readability patch ===== */
 (function(){
-  var FN_APP_VERSION = 'v44.0.0';
+  var FN_APP_VERSION = 'v44.0.1';
   function faMode(){ try { return (typeof LANG !== 'undefined' ? LANG : localStorage.getItem('lang')) === 'fa'; } catch(e){ return false; } }
   function esc(s){ return String(s || '').replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]); }); }
   function aboutHTML(){
@@ -87,7 +87,7 @@
 
 /* ===== v40.10.10 Settings theme labels + flag language picker ===== */
 (function(){
-  var FN_APP_VERSION_40102 = 'v44.0.0';
+  var FN_APP_VERSION_40102 = 'v44.0.1';
   var UK_FLAG_URL = 'https://flagcdn.com/gb.svg';
   var IRAN_FLAG_URL_40102 = 'https://flagofiran.com/files/Flag_of_Iran.svg';
   function faMode(){
@@ -266,7 +266,7 @@
 
 /* ===== v40.10.10 safe sidebar + settings refinements ===== */
 (function(){
-  var FN_APP_VERSION_40104 = 'v44.0.0';
+  var FN_APP_VERSION_40104 = 'v44.0.1';
   var IR_FLAG_URL = 'https://flagofiran.com/files/Flag_of_Iran.svg';
   function faMode(){ try { return (typeof LANG !== 'undefined' ? LANG : localStorage.getItem('lang')) === 'fa'; } catch(e){ return false; } }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); }
@@ -474,7 +474,7 @@
 
 /* ===== v40.10.10 readability + sidebar accordion behavior ===== */
 (function(){
-  var FN_APP_VERSION_40105 = 'v44.0.0';
+  var FN_APP_VERSION_40105 = 'v44.0.1';
   function isFa(){ try { return (typeof LANG !== 'undefined' ? LANG : localStorage.getItem('lang')) === 'fa'; } catch(e){ return false; } }
   function setVersion(){
     try { window.FAMILY_NIGHT_VERSION = FN_APP_VERSION_40105; } catch(e){}
@@ -570,7 +570,7 @@
 /* ===== v40.10.10 Search tab Hollywood-first people priority ===== */
 (function(){
   'use strict';
-  var FN_APP_VERSION_40106 = 'v44.0.0';
+  var FN_APP_VERSION_40106 = 'v44.0.1';
   var PERSON_TYPES = { actor_male_list: true, actor_female_list: true };
   var EN_COUNTRIES = { US:true, GB:true, CA:true, AU:true, NZ:true, IE:true };
   var cache = new Map();
@@ -828,7 +828,7 @@
 
 (function(){
   'use strict';
-  var FN_VER = 'v44.0.0';
+  var FN_VER = 'v44.0.1';
   function isFa(){ try { return (typeof LANG !== 'undefined' ? LANG : localStorage.getItem('lang')) === 'fa'; } catch(e){ return false; } }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); }
   function ratingsObj(){ try { return JSON.parse(localStorage.getItem('family_personal_ratings_v1') || '{}') || {}; } catch(e){ return {}; } }

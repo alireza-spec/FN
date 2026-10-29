@@ -298,7 +298,7 @@ document.addEventListener('fullscreenchange',icons);document.addEventListener('w
       else task();
     };
   }
-  var FN_VER41 = 'v44.0.0';
+  var FN_VER41 = 'v44.0.1';
   window.FN_APP_VERSION = FN_VER41;
   function fnIsFa(){ try { return (typeof LANG !== 'undefined' ? LANG : (localStorage.getItem('lang') || 'fa')) === 'fa'; } catch(e){ return true; } }
   function applyFnVersion(){
