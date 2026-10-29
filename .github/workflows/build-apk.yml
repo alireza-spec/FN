@@ -1,0 +1,99 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Prepare web assets
+        run: |
+          mkdir -p www/icons
+          cp index.html manifest.json sw.js sw44.js www/
+          cp v44-js-*.js v44-css-*.css www/
+          cp icons/icon-192.png icons/icon-512.png www/icons/
+          ls www
+          test -f www/index.html
+
+      - name: Init Capacitor project
+        run: |
+          npm init -y
+          npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+          cat > capacitor.config.json << 'EOF'
+          {
+            "appId": "com.familynight.app",
+            "appName": "Family Night",
+            "webDir": "www",
+            "server": {
+              "androidScheme": "https",
+              "cleartext": true
+            },
+            "android": {
+              "allowMixedContent": true
+            }
+          }
+          EOF
+          npx cap add android
+          npx cap sync android
+
+      - name: Set APK version and icon
+        run: |
+          cp www/icons/icon-512.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
+          cp www/icons/icon-512.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png || true
+          python3 - << 'PY'
+          import re
+          p = 'android/app/build.gradle'
+          s = open(p).read()
+          s = re.sub(r'versionCode \d+', 'versionCode 4401', s)
+          s = re.sub(r'versionName "[^"]*"', 'versionName "44.0.1"', s)
+          open(p, 'w').write(s)
+          print('versionCode 4401' in s, 'versionName "44.0.1"' in s)
+          PY
+
+      - name: Build debug APK
+        run: |
+          cd android && ./gradlew assembleDebug --stacktrace
+
+      - name: Rename APK
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk FamilyNight-v44.0.1.apk
+          ls -lh FamilyNight-v44.0.1.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FamilyNight-v44.0.1
+          path: FamilyNight-v44.0.1.apk
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v44.0.1
+          name: Family Night v44.0.1 (APK)
+          body: |
+            Family Night Android APK, built from the web app in this repo (v44.0.1).
+            Install by sideloading: allow "Install unknown apps" for your browser, then open the APK.
+            This is a debug-signed APK for direct installation. It is not a Play Store release build.
+          files: FamilyNight-v44.0.1.apk
