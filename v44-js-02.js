@@ -673,11 +673,17 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
             // Snapshot fetch starts immediately, in parallel with the worker
             // probe, so a blocked network costs ~1.5s (probe timeout) instead
             // of probe timeout + snapshot fetch time.
+                        const _snapFetch = (b) => {
+                            const c = new AbortController();
+                const t = setTimeout(() => c.abort(), 4000);
+                    return fetch(b, { signal: c.signal }).finally(() => clearTimeout(t));
+            };
             const snapP = (async () => {
+                                            
                 const bases = ['snapshot/home.json', 'https://cdn.jsdelivr.net/gh/alireza-spec/FN@main/snapshot/home.json'];
                 for (const b of bases) {
                     try {
-                        const r = await fetch(b);
+                        const r = await _snapFetch(b);
                         if (r.ok) {
                             const jj = await r.json();
                             if (jj && jj.rows) return { data: jj, base: b.replace(/home\.json$/, '') };
@@ -686,6 +692,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                 }
                 return null;
             })();
+                            const snapPGuarded = Promise.race([snapP, new Promise((res) => setTimeout(() => res(null), 5000))]);
             try {
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 1500);
@@ -694,7 +701,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                 if (res.ok) {
                     // Worker reachable, but Home still renders from the
                     // snapshot first (instant rows); detail/grids stay live.
-                    const snapOk = await snapP;
+                    const snapOk = await snapPGuarded;
                     if (snapOk) {
                         window.__fnSnapData = snapOk.data;
                         window.__fnSnapBase = snapOk.base;
@@ -702,7 +709,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                     return false;
                 }
             } catch(e) {}
-            const snap = await snapP;
+            const snap = await snapPGuarded;
             if (snap) {
                 window.__fnSnapData = snap.data;
                 window.__fnSnapBase = snap.base;
