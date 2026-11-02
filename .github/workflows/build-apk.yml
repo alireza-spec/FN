@@ -84,6 +84,7 @@ jobs:
               raise SystemExit('font bundle failed: 0 fonts bundled')
           PY
           ls www/fonts www/webfonts 2>/dev/null | head -25
+          sed -i 's|href="fonts/vazirmatn.css"|href="vazirmatn.css"|g; s|href="fonts/fontawesome.css"|href="fontawesome.css"|g' www/index.html
 
       - name: Init Capacitor project
         run: |
