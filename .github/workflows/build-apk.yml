@@ -110,6 +110,11 @@ jobs:
         run: |
           cp www/icons/icon-512.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
           cp www/icons/icon-512.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png || true
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+          cp www/icons/icon-512.png android/app/src/main/res/mipmap-$d/ic_launcher.png 2>/dev/null || true
+          cp www/icons/icon-512.png android/app/src/main/res/mipmap-$d/ic_launcher_round.png 2>/dev/null || true
+          done
           python3 - << 'PY'
           import re
           p = 'android/app/build.gradle'
