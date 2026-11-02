@@ -673,19 +673,44 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
             }
             return false;
         }
-        // Any Worker image that fails (cards, hero, detail) retries once from the
-        // snapshot image folder (Pages when same-origin, jsdelivr when that won).
+        // Image fallback chain (cards, hero, detail, people, flags):
+        //   Worker /img/  -> snapshot copy (Pages/jsdelivr, same basename)
+        //                   -> weserv proxy of the TMDB original (covers every
+        //                      image the snapshot does not contain: grids,
+        //                      search, detail, people)
+        //   any other http(s) image -> weserv proxy of itself.
+        // Weserv is only ever tried after the first two fail, never first.
+        function fnWeservUrl(src) {
+            var mm = src.match(/snapshot\/img\/(w200|w780)(\/[^?#]+)/);
+            if (mm) return 'https://images.weserv.nl/?url=image.tmdb.org/t/p/' + mm[1] + mm[2];
+            var clean = src.replace(/^https?:\/\//, '').split(/[?#]/)[0];
+            if (!clean) return null;
+            return 'https://images.weserv.nl/?url=' + clean;
+        }
         document.addEventListener('error', function(e) {
             try {
                 const t = e.target;
-                if (!t || t.tagName !== 'IMG' || (t.dataset && t.dataset.fnSnap)) return;
+                if (!t || t.tagName !== 'IMG') return;
                 const src = t.src || '';
-                if (src.indexOf('snapshot/img/') !== -1) return;
-                const mm = src.match(/\/img\/(w200|w780)(\/[^?#]+)/);
-                if (!mm) return;
-                if (t.dataset) t.dataset.fnSnap = '1';
-                const base = window.__fnSnapBase || 'snapshot/';
-                t.src = base + 'img/' + mm[1] + mm[2];
+                if (!src || src.indexOf('images.weserv.nl') !== -1) return;
+                var stage = (t.dataset && t.dataset.fnSnap) ? parseInt(t.dataset.fnSnap, 10) : 0;
+                if (stage >= 2) return;
+                var nu = null;
+                if (stage === 0) {
+                    var mm = src.match(/\/img\/(w200|w780)(\/[^?#]+)/);
+                    if (mm && src.indexOf('snapshot/img/') === -1) {
+                        var base = window.__fnSnapBase || 'snapshot/';
+                        nu = base + 'img/' + mm[1] + mm[2];
+                    } else if (/^https?:\/\//.test(src)) {
+                        nu = fnWeservUrl(src);
+                        stage = 1;
+                    } else return;
+                } else {
+                    nu = fnWeservUrl(src);
+                }
+                if (!nu) return;
+                if (t.dataset) t.dataset.fnSnap = String(stage + 1);
+                t.src = nu;
             } catch(err) {}
         }, true);
         // Hanging Worker images: on filtered/slow networks a request can stall
@@ -758,7 +783,23 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                             var timer = setTimeout(function() { if (!done) { done = true; swap(); } }, 5000);
                             function swap() {
                                 var nu = snapUrl(url);
-                                if (nu) sl.style.backgroundImage = 'url(' + nu + ')';
+                                if (!nu) return;
+                                sl.style.backgroundImage = 'url(' + nu + ')';
+                                // The snapshot may not contain this backdrop
+                                // (grids/hero items outside the home snapshot):
+                                // probe it, and fall through to weserv on failure.
+                                var p2 = new Image();
+                                var t2 = setTimeout(function() {
+                                    var w = fnWeservUrl(nu);
+                                    if (w) sl.style.backgroundImage = 'url(' + w + ')';
+                                }, 5000);
+                                p2.onerror = function() {
+                                    clearTimeout(t2);
+                                    var w = fnWeservUrl(nu);
+                                    if (w) sl.style.backgroundImage = 'url(' + w + ')';
+                                };
+                                p2.onload = function() { clearTimeout(t2); };
+                                p2.src = nu;
                             }
                             probe.onload = function() { if (!done) { done = true; clearTimeout(timer); } };
                             probe.onerror = function() { if (!done) { done = true; clearTimeout(timer); swap(); } };
