@@ -997,18 +997,17 @@ function renderAdditionalScores(scores) {
                     'HU': 'Hungary', 'GR': 'Greece', 'TR': 'Turkey', 'IR': 'Iran', 'IL': 'Israel'
                 };
                 
-                // v44.0.18: emoji flags instead of flagcdn images — the
-                // flag CDN fails from the user's no-VPN network, which
-                // left country chips without flags (inconsistently, as
-                // some were cached). Emoji renders instantly, no network.
-                const flagEmoji = (iso) => { try { return String.fromCodePoint(...String(iso || '').toUpperCase().split('').map(c => 127397 + c.charCodeAt(0))); } catch(e) { return ''; } };
                 let countriesHTML = '';
                 d.production_countries.forEach(country => {
                     const countryNames = LANG === 'fa' ? COUNTRY_NAMES_FA : COUNTRY_NAMES_EN;
                     const countryName = countryNames[country.iso_3166_1] || country.name || country.iso_3166_1;
+                    const flagUrl = country.iso_3166_1 === 'IR'
+                        ? 'https://flagofiran.com/files/Flag_of_Iran.svg'
+                        : `https://flagcdn.com/w80/${country.iso_3166_1.toLowerCase()}.png`;
                     countriesHTML += `
                         <div class="country-item" onclick="openCountryGrid('${country.iso_3166_1}', '${countryName}')" style="cursor:pointer;">
-                            <span class="country-flag" style="font-size:19px;line-height:1;">${flagEmoji(country.iso_3166_1)}</span>
+                            <img src="${flagUrl}" class="country-flag" loading="lazy" 
+                                 alt="${countryName}" onerror="this.style.display='none'">
                             <span class="country-name">${countryName}</span>
                         </div>
                     `;
