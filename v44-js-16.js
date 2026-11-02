@@ -15,9 +15,8 @@
 
     // Streaming-server embed domains (used by the online player)
     var PLAYER_DOMAINS = [
-        'autoembed.co', 'vidsrcme.ru', '2embed.cc', 'embed.smashystream.com',
-        'nontongo.win', '111movies.com', 'vidlink.pro',
-        'player.videasy.net'
+        'vidy.st', 'vidcore.org', 'embed.smashystream.com',
+        'flikembed.freebuff.app', 'vidspark.to'
     ];
 
     // Ordered fallback proxies for generic fetch() (API/text) calls.

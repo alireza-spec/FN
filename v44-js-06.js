@@ -292,31 +292,27 @@ function toggleSeason(seasonId) {
 
 
         // === SERVER DEFINITIONS ===
+        // Verified 2026-11-02 on Ali G: Who Iz I? (2026) + The Shawshank
+        // Redemption (1994): all 5 play both titles. The 7 old servers
+        // (AutoEmbed, VidSrc, 2Embed, SmashyStream kept, NontonGo,
+        // 111Movies, VidLink, VidEasy) were removed except SmashyStream:
+        // the others were dead or blocked on both titles.
         const SERVERS = [
-            { key: 'autoembed',  fa: 'سرور ۱ (AutoEmbed)',     en: 'Server 1 (AutoEmbed)',
-              movie: (id,tm,im)=>`https://autoembed.co/movie/imdb/${im||tm}`,
-              tv: (id,s,e,tm,im)=>`https://autoembed.co/tv/imdb/${im||tm}/${s}/${e}` },
-            { key: 'vidsrcme',   fa: 'سرور ۲ (VidSrc)',        en: 'Server 2 (VidSrc)',
-              movie: (id,tm,im)=>`https://vidsrcme.ru/embed/movie/${im||tm}`,
-              tv: (id,s,e,tm,im)=>`https://vidsrcme.ru/embed/tv/${im||tm}/${s}/${e}` },
-            { key: 'embed2',     fa: 'سرور ۳ (2Embed)',        en: 'Server 3 (2Embed)',
-              movie: (id,tm,im)=>`https://www.2embed.cc/embed/${im||tm}`,
-              tv: (id,s,e,tm,im)=>`https://www.2embed.cc/embedtv/${im||tm}&s=${s}&e=${e}` },
-            { key: 'smashynet',  fa: 'سرور ۴ (SmashyStream)',  en: 'Server 4 (SmashyStream)',
+            { key: 'vidy',       fa: 'سرور ۱ (Vidy)',          en: 'Server 1 (Vidy)',
+              movie: (id,tm,im)=>`https://vidy.st/movie/${tm}`,
+              tv: (id,s,e,tm,im)=>`https://vidy.st/tv/${tm}/${s}/${e}` },
+            { key: 'vidcore',    fa: 'سرور ۲ (VidCore)',       en: 'Server 2 (VidCore)',
+              movie: (id,tm,im)=>`https://vidcore.org/embed/movie/${tm}`,
+              tv: (id,s,e,tm,im)=>`https://vidcore.org/embed/tv/${tm}/${s}/${e}` },
+            { key: 'smashynet',  fa: 'سرور ۳ (SmashyStream)',  en: 'Server 3 (SmashyStream)',
               movie: (id,tm,im)=>`https://embed.smashystream.com/playere.php?imdb=${im||tm}`,
               tv: (id,s,e,tm,im)=>`https://embed.smashystream.com/playere.php?imdb=${im||tm}&season=${s}&episode=${e}` },
-            { key: 'nontongo',   fa: 'سرور ۵ (NontonGo)',      en: 'Server 5 (NontonGo)',
-              movie: (id,tm,im)=>`https://www.nontongo.win/embed/movie/${im||tm}`,
-              tv: (id,s,e,tm,im)=>`https://www.nontongo.win/embed/tv/${im||tm}/${s}/${e}` },
-            { key: 'movies111',  fa: 'سرور ۷ (111Movies)',     en: 'Server 7 (111Movies)',
-              movie: (id,tm,im)=>`https://111movies.com/movie/${tm}`,
-              tv: (id,s,e,tm,im)=>`https://111movies.com/tv/${tm}/${s}/${e}` },
-            { key: 'vidlink',    fa: 'سرور ۸ (VidLink)',       en: 'Server 8 (VidLink)',
-              movie: (id,tm,im)=>`https://vidlink.pro/movie/${tm}`,
-              tv: (id,s,e,tm,im)=>`https://vidlink.pro/tv/${tm}/${s}/${e}` },
-            { key: 'videasy',    fa: 'سرور ۹ (VidEasy)',       en: 'Server 9 (VidEasy)',
-              movie: (id,tm,im)=>`https://player.videasy.net/movie/${tm}`,
-              tv: (id,s,e,tm,im)=>`https://player.videasy.net/tv/${tm}/${s}/${e}` },
+            { key: 'flikembed',  fa: 'سرور ۴ (FlikEmbed)',     en: 'Server 4 (FlikEmbed)',
+              movie: (id,tm,im)=>`https://flikembed.freebuff.app/embed/movie/${tm}`,
+              tv: (id,s,e,tm,im)=>`https://flikembed.freebuff.app/embed/tv/${tm}/${s}/${e}` },
+            { key: 'vidspark',   fa: 'سرور ۵ (VidSpark)',      en: 'Server 5 (VidSpark)',
+              movie: (id,tm,im)=>`https://www.vidspark.to/movie/${tm}`,
+              tv: (id,s,e,tm,im)=>`https://www.vidspark.to/tv/${tm}/${s}/${e}` },
         ];
         
         let curPlayerServer = 0;
@@ -423,7 +419,7 @@ function toggleSeason(seasonId) {
             if (!hint || !textEl) return;
             const srv = SERVERS[curPlayerServer];
             clearTimeout(_vidsrcHintTimer);
-            if (!srv || srv.key !== 'vidsrcme') { hint.classList.remove('show'); return; }
+            if (!srv || ['vidy', 'vidcore', 'flikembed'].indexOf(srv.key) === -1) { hint.classList.remove('show'); return; }
             textEl.textContent = LANG === 'fa'
                 ? '💡 اگه پخش نشد، روی «SERVER ▾» داخل پلیر بزن و منبع دیگه‌ای رو امتحان کن'
                 : '💡 If it won\'t play, tap "SERVER ▾" inside the player to try another source';
