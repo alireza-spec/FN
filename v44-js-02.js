@@ -691,7 +691,16 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                 const timeout = setTimeout(() => controller.abort(), 1500);
                 const res = await fetch(BASE + '/trending/all/day?language=en-US', { signal: controller.signal });
                 clearTimeout(timeout);
-                if (res.ok) return false;
+                if (res.ok) {
+                    // Worker reachable, but Home still renders from the
+                    // snapshot first (instant rows); detail/grids stay live.
+                    const snapOk = await snapP;
+                    if (snapOk) {
+                        window.__fnSnapData = snapOk.data;
+                        window.__fnSnapBase = snapOk.base;
+                    }
+                    return false;
+                }
             } catch(e) {}
             const snap = await snapP;
             if (snap) {

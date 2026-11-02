@@ -319,7 +319,7 @@ function showToast(msg, duration = 2500) {
                 `;
                 c.appendChild(div);
                 // Fetch each row only near the viewport; expensive custom rows no longer block Home.
-                if (window.__fnSnapMode && window.__fnSnapData && window.__fnSnapData.rows && window.__fnSnapData.rows[s.id]) {
+                if (window.__fnSnapData && window.__fnSnapData.rows && window.__fnSnapData.rows[s.id]) {
                     const snapRow = document.getElementById(`row-${s.id}`);
                     if (snapRow) snapRow.innerHTML = window.__fnSnapData.rows[s.id].map(function(m) { return makeCard(m, m.media_type || s.type); }).join('');
                 } else if (window.fnLoadHomeRow) window.fnLoadHomeRow(s, `row-${s.id}`);

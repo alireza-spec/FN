@@ -311,7 +311,7 @@ function populateKeywordsSidebar() {
         
         // --- HERO CAROUSEL (20 Titles, Auto-Play 3s) ---
         async function loadCarouselData() {
-            if (window.__fnSnapMode && window.__fnSnapData && window.__fnSnapData.hero) {
+            if (window.__fnSnapData && window.__fnSnapData.hero) {
                 carouselData = window.__fnSnapData.hero.filter(m => m.backdrop_path).slice(0, 20);
                 renderCarousel();
                 startCarouselTimer();
@@ -347,7 +347,7 @@ function populateKeywordsSidebar() {
                 const genreMap = {28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Crime',99:'Documentary',18:'Drama',10751:'Family',14:'Fantasy',36:'History',27:'Horror',10402:'Music',9648:'Mystery',10749:'Romance',878:'Sci-Fi',10770:'TV Movie',53:'Thriller',10752:'War',37:'Western'};
                 const genres = (m.genre_ids || []).slice(0,2).map(g => genreMap[g] || '').filter(Boolean).join(' · ');
                 const overview = (m.overview || '').substring(0, 90) + ((m.overview||'').length > 90 ? '...' : '');
-                const _bgUrl = (window.__fnSnapMode ? ((window.__fnSnapBase || 'snapshot/') + 'img/w780') : IMG_BG.replace('/w1280', '/w780')) + m.backdrop_path;
+                const _bgUrl = (window.__fnSnapData ? ((window.__fnSnapBase || 'snapshot/') + 'img/w780') : IMG_BG.replace('/w1280', '/w780')) + m.backdrop_path;
                 const _isNear = (i === 0 || i === carouselData.length - 1 || i === 1);
                 return `
                     <div class="slide ${i === 0 ? 'active' : ''}" id="slide-${i}"
