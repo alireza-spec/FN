@@ -59,7 +59,7 @@ jobs:
                   try:
                       req = urllib.request.Request(src, headers={'User-Agent': 'Mozilla/5.0'})
                       data = urllib.request.urlopen(req, timeout=60).read()
-                      open(os.path.join(out_dir, name), 'wb').write(data)
+                      open(os.path.join('www', out_dir, name), 'wb').write(data)
                       css = css.replace(tok, out_dir + '/' + name)
                       ok += 1
                   except Exception as e:
@@ -80,6 +80,7 @@ jobs:
               print('index.html rewritten to local fonts')
           else:
               print('font bundle incomplete; keeping CDN links')
+              raise SystemExit('font bundle failed: 0 fonts bundled')
           PY
           ls www/fonts www/webfonts 2>/dev/null | head -25
 
@@ -112,10 +113,10 @@ jobs:
           import re
           p = 'android/app/build.gradle'
           s = open(p).read()
-          s = re.sub(r'versionCode \d+', 'versionCode 4402', s)
-          s = re.sub(r'versionName "[^"]*"', 'versionName "44.0.2"', s)
+          s = re.sub(r'versionCode \d+', 'versionCode 4403', s)
+          s = re.sub(r'versionName "[^"]*"', 'versionName "44.0.3"', s)
           open(p, 'w').write(s)
-          print('versionCode 4402' in s, 'versionName "44.0.2"' in s)
+          print('versionCode 4403' in s, 'versionName "44.0.3"' in s)
           PY
 
       - name: Build debug APK
@@ -124,24 +125,24 @@ jobs:
 
       - name: Rename APK
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk FamilyNight-v44.0.2.apk
-          ls -lh FamilyNight-v44.0.2.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk FamilyNight-v44.0.3.apk
+          ls -lh FamilyNight-v44.0.3.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FamilyNight-v44.0.2
-          path: FamilyNight-v44.0.2.apk
+          name: FamilyNight-v44.0.3
+          path: FamilyNight-v44.0.3.apk
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v44.0.2
-          name: Family Night v44.0.2 (APK)
+          tag_name: v44.0.3
+          name: Family Night v44.0.3 (APK)
           body: |
-            Family Night Android APK, built from the web app in this repo (v44.0.2).
+            Family Night Android APK, built from the web app in this repo (v44.0.3).
             Speed package: home rows load max 3 at a time, fonts bundled inside the APK,
             API cache fresh window extended to 6 hours for trending/discover.
             Install by sideloading: allow "Install unknown apps" for your browser, then open the APK.
             This is a debug-signed APK for direct installation. It is not a Play Store release build.
-          files: FamilyNight-v44.0.2.apk
+          files: FamilyNight-v44.0.3.apk
