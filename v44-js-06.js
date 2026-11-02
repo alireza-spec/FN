@@ -1210,14 +1210,10 @@ function toggleSeason(seasonId) {
 
         function togglePlayerFullscreen() {
             if (!_isPlayerOpen()) return;
-            var pfs = document.getElementById('player-fs');
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                var req = pfs.requestFullscreen || pfs.webkitRequestFullscreen || pfs.mozRequestFullScreen;
-                if (req) req.call(pfs).then(function() { _playerLandscape(); }).catch(function() {});
-            } else {
-                var ex = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
-                if (ex) ex.call(document);
-            }
+            // Forced fullscreen while playing: this button can only
+            // (re-)enter fullscreen, never leave it — leaving playback
+            // (close) is the only exit.
+            _forcePlayerFullscreen();
         }
 
         function _clearPiPInteraction(pfs) { if (pfs && pfs._fnPiPAbort) { pfs._fnPiPAbort.abort(); pfs._fnPiPAbort=null; } }
@@ -1245,7 +1241,36 @@ function toggleSeason(seasonId) {
             try { if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); else if(window.screen.lockOrientation) window.screen.lockOrientation('landscape-primary'); } catch(_) {}
         }
 
-        // Fullscreen icon + landscape lock on state change
+        // Forced fullscreen while the player is open: if fullscreen was
+        // lost (popup tab + return, failed request), re-enter it. Only
+        // closePlayer() exits fullscreen. No-ops when already fullscreen,
+        // when mini-mode (PiP) is active, or when the player is closed. A
+        // re-request refused for lack of a user gesture simply leaves the
+        // player windowed until the next tap, which retries with a real
+        // gesture.
+        function _forcePlayerFullscreen() {
+            if(!_isPlayerOpen()) return;
+            var pfs = document.getElementById('player-fs');
+            if(!pfs || pfs.classList.contains('mini-mode')) return;
+            if (document.fullscreenElement || document.webkitFullscreenElement) { _playerLandscape(); return; }
+            var req = pfs.requestFullscreen || pfs.webkitRequestFullscreen || pfs.mozRequestFullScreen;
+            if (req) {
+                try {
+                    var pr = req.call(pfs);
+                    if (pr && pr.then) pr.then(function(){ _playerLandscape(); }).catch(function(){ _playerLandscape(); });
+                    else _playerLandscape();
+                } catch(_) { _playerLandscape(); }
+            } else _playerLandscape();
+        }
+
+        // Fullscreen icon + landscape lock on state change, plus the
+        // forced-fullscreen guard. Design note: the guard does NOT
+        // re-enter on fullscreenchange exit — on Android, Back exits
+        // fullscreen without popping history, so re-entering there would
+        // trap the user (Back could never reach popstate/closePlayer).
+        // Instead: Back = 2 presses (fullscreen exit, then close via
+        // popstate in js10); popup-tab return and any tap on the player
+        // re-enter fullscreen automatically (below).
         (function() {
             function _onFSChange() {
                 if (!_isPlayerOpen()) return;
@@ -1260,10 +1285,10 @@ function toggleSeason(seasonId) {
                 if (_isPlayerOpen()) setTimeout(_playerLandscape, 250);
             });
             window.addEventListener('focus', function() {
-                if (_isPlayerOpen()) _playerLandscape();
+                if (_isPlayerOpen()) _forcePlayerFullscreen();
             });
             document.addEventListener('visibilitychange', function() {
-                if (document.visibilityState === 'visible' && _isPlayerOpen()) _playerLandscape();
+                if (document.visibilityState === 'visible' && _isPlayerOpen()) _forcePlayerFullscreen();
             });
 
             // Pointer listeners: pause timer while touching, restart on release
@@ -1273,6 +1298,8 @@ function toggleSeason(seasonId) {
                     if (!_isPlayerOpen()) return;
                     _showTopbar();
                     clearTimeout(_topbarTimer);
+                    // Any tap re-asserts forced fullscreen (fresh gesture).
+                    _forcePlayerFullscreen();
                 }, { passive: true });
                 pfs.addEventListener('pointerup', function() {
                     if (_isPlayerOpen()) _startTopbarTimer();

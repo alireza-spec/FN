@@ -349,6 +349,9 @@ function showToast(msg, duration = 2500) {
             c.appendChild(upcomingTrigger);
             if (window.fnDeferHomeTask) window.fnDeferHomeTask(upcomingTrigger, () => renderMonthlyUpcoming(c));
             else renderMonthlyUpcoming(c);
+            // Home shell painted: the boot splash gate (js01) may now hide
+            // once a row has cards, or 2.5s after this timestamp.
+            try { window.__fnHomeShellAt = Date.now(); } catch(_) {}
         }
 
         // ===== Official monthly releases / premieres (Home only) =====
