@@ -257,11 +257,32 @@ document.addEventListener('fullscreenchange',icons);document.addEventListener('w
   // The monthly-upcoming widget at the bottom is deferred the same way (700px).
   if (!window.fnLoadHomeRow) {
     var _fnEagerRows = 0;
+    // FN-v44.0.2 speed: cap concurrent row loads at 3. Fast scrolling used to
+    // fire every visible row at once, flooding the worker (6 connections/host)
+    // so rows stalled on skeletons. Queued rows still load, in order, as slots
+    // free (promise settle, 1.5s for sync rows, 15s safety cap). No row removed.
+    var _fnRowActive = 0, _fnRowQueue = [];
+    function _fnRowDone(){ _fnRowActive = Math.max(0, _fnRowActive - 1); _fnRowPump(); }
+    function _fnRowPump(){
+      while (_fnRowActive < 3 && _fnRowQueue.length) {
+        var fn = _fnRowQueue.shift(); _fnRowActive++;
+        (function(run){
+          var finished = false;
+          function done(){ if (finished) return; finished = true; _fnRowDone(); }
+          setTimeout(done, 15000);
+          try {
+            var r = run();
+            if (r && typeof r.then === 'function') r.then(done, done);
+            else setTimeout(done, 1500);
+          } catch(e){ done(); }
+        })(fn);
+      }
+    }
     var _fnRowObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(function(entries){
       entries.forEach(function(entry){
         if (!entry.isIntersecting) return;
         _fnRowObserver.unobserve(entry.target);
-        if (entry.target.__fnStart) entry.target.__fnStart();
+        if (entry.target.__fnStart) { _fnRowQueue.push(entry.target.__fnStart); _fnRowPump(); }
       });
     }, { rootMargin: '900px 0px' }) : null;
     window.fnLoadHomeRow = function(section, id){
@@ -271,9 +292,9 @@ document.addEventListener('fullscreenchange',icons);document.addEventListener('w
       var start = function(){
         if (el.dataset.fnLoaded) return;
         el.dataset.fnLoaded = '1';
-        if (section.trending && typeof window.loadTrendingRow === 'function') window.loadTrendingRow(section.q, id);
-        else if (section.adult && typeof window.loadAdultRow === 'function') window.loadAdultRow(id);
-        else if (typeof window.loadRow === 'function') window.loadRow(section.q, id, section.type);
+        if (section.trending && typeof window.loadTrendingRow === 'function') return window.loadTrendingRow(section.q, id);
+        else if (section.adult && typeof window.loadAdultRow === 'function') return window.loadAdultRow(id);
+        else if (typeof window.loadRow === 'function') return window.loadRow(section.q, id, section.type);
       };
       var sec = el.closest ? el.closest('.section') : null;
       if (sec) sec.__fnStart = start;
@@ -298,7 +319,7 @@ document.addEventListener('fullscreenchange',icons);document.addEventListener('w
       else task();
     };
   }
-  var FN_VER41 = 'v44.0.1';
+  var FN_VER41 = 'v44.0.2';
   window.FN_APP_VERSION = FN_VER41;
   function fnIsFa(){ try { return (typeof LANG !== 'undefined' ? LANG : (localStorage.getItem('lang') || 'fa')) === 'fa'; } catch(e){ return true; } }
   function applyFnVersion(){
