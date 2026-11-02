@@ -649,27 +649,35 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
         window.__fnSnapData = null;
         window.__fnSnapBase = '';
         async function fnProbeSnapshot() {
+            // Snapshot fetch starts immediately, in parallel with the worker
+            // probe, so a blocked network costs ~1.5s (probe timeout) instead
+            // of probe timeout + snapshot fetch time.
+            const snapP = (async () => {
+                const bases = ['snapshot/home.json', 'https://cdn.jsdelivr.net/gh/alireza-spec/FN@main/snapshot/home.json'];
+                for (const b of bases) {
+                    try {
+                        const r = await fetch(b);
+                        if (r.ok) {
+                            const jj = await r.json();
+                            if (jj && jj.rows) return { data: jj, base: b.replace(/home\.json$/, '') };
+                        }
+                    } catch(e) {}
+                }
+                return null;
+            })();
             try {
                 const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 3500);
+                const timeout = setTimeout(() => controller.abort(), 1500);
                 const res = await fetch(BASE + '/trending/all/day?language=en-US', { signal: controller.signal });
                 clearTimeout(timeout);
                 if (res.ok) return false;
             } catch(e) {}
-            const bases = ['snapshot/home.json', 'https://cdn.jsdelivr.net/gh/alireza-spec/FN@main/snapshot/home.json'];
-            for (const b of bases) {
-                try {
-                    const r = await fetch(b);
-                    if (r.ok) {
-                        const jj = await r.json();
-                        if (jj && jj.rows) {
-                            window.__fnSnapData = jj;
-                            window.__fnSnapBase = b.replace(/home\.json$/, '');
-                            window.__fnSnapMode = true;
-                            return true;
-                        }
-                    }
-                } catch(e) {}
+            const snap = await snapP;
+            if (snap) {
+                window.__fnSnapData = snap.data;
+                window.__fnSnapBase = snap.base;
+                window.__fnSnapMode = true;
+                return true;
             }
             return false;
         }
@@ -681,7 +689,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
         //   any other http(s) image -> weserv proxy of itself.
         // Weserv is only ever tried after the first two fail, never first.
         function fnWeservUrl(src) {
-            var mm = src.match(/snapshot\/img\/(w200|w780)(\/[^?#]+)/);
+            var mm = src.match(/snapshot\/img\/([wh]\d+)(\/[^?#]+)/);
             if (mm) return 'https://images.weserv.nl/?url=image.tmdb.org/t/p/' + mm[1] + mm[2];
             var clean = src.replace(/^https?:\/\//, '').split(/[?#]/)[0];
             if (!clean) return null;
@@ -697,7 +705,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                 if (stage >= 2) return;
                 var nu = null;
                 if (stage === 0) {
-                    var mm = src.match(/\/img\/(w200|w780)(\/[^?#]+)/);
+                    var mm = src.match(/\/img\/([wh]\d+)(\/[^?#]+)/);
                     if (mm && src.indexOf('snapshot/img/') === -1) {
                         var base = window.__fnSnapBase || 'snapshot/';
                         nu = base + 'img/' + mm[1] + mm[2];
@@ -723,7 +731,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
         // never fire error events) get the same treatment via a probe.
         (function fnImgHangFallback() {
             function snapUrl(src) {
-                var mm = src.match(/\/img\/(w200|w780)(\/[^?#]+)/);
+                var mm = src.match(/\/img\/([wh]\d+)(\/[^?#]+)/);
                 if (!mm) return null;
                 var base = (window.__fnSnapMode && window.__fnSnapBase) ? window.__fnSnapBase : 'snapshot/';
                 return base + 'img/' + mm[1] + mm[2];
@@ -742,7 +750,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                         img.dataset.fnSnap = '1';
                         img.src = nu;
                     } catch(e) {}
-                }, 4000);
+                }, 2500);
             }
             var io = null;
             try {
@@ -759,7 +767,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                         try {
                             var src = img.src || '';
                             if (!src || src.indexOf('snapshot/img/') !== -1) return;
-                            if (!/\/img\/(w200|w780)\//.test(src)) return;
+                            if (!/\/img\/([wh]\d+)\//.test(src)) return;
                             if (img.dataset.fnWatch || img.dataset.fnSnap) return;
                             if (io) io.observe(img);
                             else arm(img);
@@ -767,12 +775,12 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                     });
                 } catch(e) {}
                 try {
-                    document.querySelectorAll('.slide[data-bg]').forEach(function(sl) {
+                    document.querySelectorAll('[style*="/img/"]').forEach(function(sl) {
                         try {
                             var bg = sl.style && sl.style.backgroundImage;
                             if (!bg || bg === 'none') return;
                             if (bg.indexOf('snapshot/img/') !== -1) return;
-                            if (!/\/img\/w780\//.test(bg)) return;
+                            if (!/\/img\/[wh]\d+\//.test(bg)) return;
                             if (probed.has(sl)) return;
                             probed.add(sl);
                             var m = bg.match(/url\(["']?([^"')]+)["']?\)/);
