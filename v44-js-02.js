@@ -7,7 +7,6 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
             'https://corsproxy.io/?',
             'https://api.allorigins.win/raw?url=',
             'https://proxy.cors.sh/',
-            'https://thingproxy.freeboard.io/fetch/',
         ];
         let PROXY = PROXIES[0];
         let _proxyIdx = 0;
@@ -76,6 +75,28 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
             const isTMDB = finalUrl.includes('api.themoviedb.org') || finalUrl.includes('family-night-api.alirezadoe8.workers.dev') || finalUrl.indexOf('/api/tmdb') !== -1;
             
             if (isTMDB) {
+                if (window.__fnSnapMode) {
+                    // Worker is known-dead: race all proxies in parallel,
+                    // first success wins (a serial chain cost up to ~27s/call).
+                    var _race = PROXIES.map(function(pr) {
+                        return (async function() {
+                            var controller = new AbortController();
+                            var timeout = setTimeout(function() { controller.abort(); }, 8000);
+                            try {
+                                var res = await fetch(pr + encodeURIComponent(finalUrl), { signal: controller.signal });
+                                clearTimeout(timeout);
+                                if (res.ok) return await res.json();
+                            } catch(e) {}
+                            throw new Error('proxy failed');
+                        })();
+                    });
+                    return await new Promise(function(resolve, reject) {
+                        var failed = 0;
+                        _race.forEach(function(pr) {
+                            Promise.resolve(pr).then(resolve, function() { if (++failed >= _race.length) reject(new Error('TMDB fetch failed')); });
+                        });
+                    });
+                }
                 // TMDB از CORS پشتیبانی می‌کنه — مستقیم و سریع
                 try {
                     const controller = new AbortController();
