@@ -1619,9 +1619,15 @@ async function runDefaultDiscovery(container) {
             if (!imdbId) return null;
             
             try {
-                // Using OMDb API to get RT and Metacritic scores
-                const omdbKey = 'f6dd47c8'; // OMDb API key (you can replace with your own)
-                const response = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${omdbKey}`);
+                // v44.0.18: OMDb via our own Worker (reachable without VPN,
+                // 7-day edge cache) instead of direct omdbapi.com, which
+                // fails from no-VPN networks and stalled detail rendering
+                // (this call is awaited inline in openDetail).
+                const _ctl = new AbortController();
+                const _timer = setTimeout(() => _ctl.abort(), 6000);
+                let response;
+                try { response = await fetch(`https://family-night-api.alirezadoe8.workers.dev/v1/omdb?i=${imdbId}`, { signal: _ctl.signal }); }
+                finally { clearTimeout(_timer); }
                 const data = await response.json();
                 
                 if (data.Response === 'True') {

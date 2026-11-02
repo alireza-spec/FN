@@ -302,10 +302,16 @@
   async function loadScores(row){
     var id='';try{id=(typeof curImdb!=='undefined'&&curImdb)||'';}catch(e){}
     if(!id){setScore(row,'rt',null);setScore(row,'mc',null);setScore(row,'imdb',null);setScore(row,'votes','');return;}
-    var data=null,keys=['f6dd47c8','564727fa','trilogy'];
-    for(var i=0;i<keys.length&&!data;i++){
-      try{var r=await fetch('https://www.omdbapi.com/?i='+encodeURIComponent(id)+'&apikey='+keys[i],{cache:'no-store'});if(r.ok){var x=await r.json();if(x&&x.Response==='True')data=x;}}catch(e){}
-    }
+    // v44.0.18: OMDb via our own Worker (/v1/omdb, 7-day edge cache).
+    // Direct omdbapi.com calls fail from the user's no-VPN network,
+    // which left every badge stuck at '-'.
+    var data=null;
+    try{
+      var ctl=new AbortController();var t=setTimeout(function(){try{ctl.abort();}catch(e){}},6000);
+      var r=await fetch('https://family-night-api.alirezadoe8.workers.dev/v1/omdb?i='+encodeURIComponent(id),{signal:ctl.signal});
+      clearTimeout(t);
+      if(r.ok){var x=await r.json();if(x&&x.Response==='True')data=x;}
+    }catch(e){}
     if(!data){setScore(row,'rt',null);setScore(row,'mc',null);setScore(row,'imdb',null);setScore(row,'votes','');return;}
     var rt=null;if(Array.isArray(data.Ratings)){var rr=data.Ratings.find(function(x){return x.Source==='Rotten Tomatoes';});if(rr&&rr.Value&&rr.Value!=='N/A')rt=rr.Value.replace(/\s/g,'');}
     var mc=(data.Metascore&&data.Metascore!=='N/A')?data.Metascore:null;

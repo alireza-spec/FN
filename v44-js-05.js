@@ -997,17 +997,18 @@ function renderAdditionalScores(scores) {
                     'HU': 'Hungary', 'GR': 'Greece', 'TR': 'Turkey', 'IR': 'Iran', 'IL': 'Israel'
                 };
                 
+                // v44.0.18: emoji flags instead of flagcdn images — the
+                // flag CDN fails from the user's no-VPN network, which
+                // left country chips without flags (inconsistently, as
+                // some were cached). Emoji renders instantly, no network.
+                const flagEmoji = (iso) => { try { return String.fromCodePoint(...String(iso || '').toUpperCase().split('').map(c => 127397 + c.charCodeAt(0))); } catch(e) { return ''; } };
                 let countriesHTML = '';
                 d.production_countries.forEach(country => {
                     const countryNames = LANG === 'fa' ? COUNTRY_NAMES_FA : COUNTRY_NAMES_EN;
                     const countryName = countryNames[country.iso_3166_1] || country.name || country.iso_3166_1;
-                    const flagUrl = country.iso_3166_1 === 'IR'
-                        ? 'https://flagofiran.com/files/Flag_of_Iran.svg'
-                        : `https://flagcdn.com/w80/${country.iso_3166_1.toLowerCase()}.png`;
                     countriesHTML += `
                         <div class="country-item" onclick="openCountryGrid('${country.iso_3166_1}', '${countryName}')" style="cursor:pointer;">
-                            <img src="${flagUrl}" class="country-flag" loading="lazy" 
-                                 alt="${countryName}" onerror="this.style.display='none'">
+                            <span class="country-flag" style="font-size:19px;line-height:1;">${flagEmoji(country.iso_3166_1)}</span>
                             <span class="country-name">${countryName}</span>
                         </div>
                     `;
@@ -1079,8 +1080,10 @@ function renderAdditionalScores(scores) {
                 _detailSubtitleSection.insertAdjacentElement('afterend', _aiDetailBox);
             }
             
-            // Load similar titles
-            loadSimilarTitles(id, type, d);
+            // Load similar titles (kept as a promise: the detail loader
+            // below waits for it, so similar posters are on screen when
+            // the page appears instead of popping in late).
+            const _similarPromise = loadSimilarTitles(id, type, d);
             
             document.getElementById('modal').style.display='block';
             
@@ -1121,6 +1124,24 @@ function renderAdditionalScores(scores) {
             };
             
             initAIBox(curTitle, type, aiYear, aiRichData);
+            // v44.0.18: keep the detail loader until the late sections
+            // have actually rendered (similar titles + backdrop image),
+            // capped at 6s so nobody waits long on the loader.
+            try {
+                const _backdropDone = new Promise((_res) => {
+                    const _im = document.getElementById('d-img');
+                    if (!_im) return _res();
+                    if (_im.complete) return _res();
+                    const _done = () => _res();
+                    _im.addEventListener('load', _done, { once: true });
+                    _im.addEventListener('error', _done, { once: true });
+                    setTimeout(_done, 5000);
+                });
+                await Promise.race([
+                    Promise.allSettled([_similarPromise, _backdropDone]),
+                    new Promise((_res) => setTimeout(_res, 6000))
+                ]);
+            } catch (e) {}
             if (window.__fnDetailRequestToken === _detailRequestToken && curId === _modalLockId && curType === type) {
                 const _readyLoader = document.getElementById('fn-detail-loading');
                 if (_readyLoader) _readyLoader.classList.remove('show');

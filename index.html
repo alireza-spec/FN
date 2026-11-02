@@ -25,7 +25,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <title>Family Night v44.0.17</title>
+    <title>Family Night v44.0.18</title>
     <!-- DNS Prefetch & Preconnect for faster API/image loads -->
     <link rel="preconnect" href="https://family-night-api.alirezadoe8.workers.dev" crossorigin>
     <link rel="preconnect" href="https://family-night-api.alirezadoe8.workers.dev" crossorigin>
@@ -1034,7 +1034,7 @@
                 <div class="setting-section">
                     <div class="setting-header" id="txt-about-head">About</div>
                     <div class="dev-info">
-                        <p style="margin-bottom:10px;"><strong id="txt-desc-t">Family Night v44.0.17</strong></p>
+                        <p style="margin-bottom:10px;"><strong id="txt-desc-t">Family Night v44.0.18</strong></p>
                         <p id="txt-desc-b">The ultimate streaming experience. High-quality movies and series at your fingertips.</p>
                         <br>
                         <p id="txt-copy">© 2025 Game of family. All rights reserved.</p>
@@ -1368,7 +1368,7 @@
         <!-- Floating Close Button (always visible on scroll) -->
         <div class="floating-close-btn" id="modal-floating-close" onclick="fnCloseDetailModal()"><i class="fa-solid fa-times"></i></div>
         <div class="hero">
-            <img id="d-img" class="backdrop" src="" loading="lazy">
+            <img id="d-img" class="backdrop" src="" loading="eager" fetchpriority="high">
             <div style="position:absolute; bottom:0; left:0; width:100%; height:100px; background:linear-gradient(to top, #000, transparent); z-index:2;"></div>
         </div>
         
@@ -1660,7 +1660,7 @@
             referrerpolicy="no-referrer"
         ></iframe>
         <div id="player-tap-catcher"></div>
-        <!-- Player sidebar (v44.0.17): right-center glassy bar over the
+        <!-- Player sidebar (v44.0.18): right-center glassy bar over the
              player. Handle toggles it; tapping the page or picking a
              server closes it so it never hogs the screen. -->
         <button id="player-sidebar-handle" onclick="togglePlayerSidebar()" title="Servers" aria-label="Servers">

@@ -552,6 +552,24 @@ function toggleSeason(seasonId) {
             _setIframeSmart(url);
             const pfs = document.getElementById('player-fs');
             pfs.style.display = 'flex';
+
+            // v44.0.18: connecting note — without VPN some server hosts
+            // are unreachable, which used to look like a dead Play button
+            // (black iframe, zero feedback). Show what is happening and
+            // point at the server sidebar; hide on load or after 12s.
+            (function(){
+                const hint = document.getElementById('vidsrc-hint');
+                const textEl = document.getElementById('vidsrc-hint-text');
+                const iframe = document.getElementById('iframe');
+                if (!hint || !textEl) return;
+                textEl.textContent = LANG === 'fa'
+                    ? '⏳ در حال اتصال به سرور… اگر تصویر سیاه ماند، از نوار قرمز سمت راست سرور دیگری را انتخاب کن'
+                    : '⏳ Connecting to server… if the screen stays black, pick another server from the red bar on the right';
+                hint.classList.add('show');
+                const _hide = () => hint.classList.remove('show');
+                if (iframe) iframe.onload = _hide;
+                setTimeout(_hide, 12000);
+            })();
             
             // Show topbar and start 5-second auto-hide timer
             _showTopbar();
@@ -841,9 +859,14 @@ function toggleSeason(seasonId) {
         async function fetchAndRenderAwards(imdbId, type, container) {
             if (!imdbId) return;
             try {
-                // استفاده از OMDb API برای اطلاعات جوایز
-                const omdbUrl = `https://www.omdbapi.com/?i=${imdbId}&apikey=trilogy`;
-                const res = await fetch(PROXY + encodeURIComponent(omdbUrl));
+                // v44.0.18: OMDb via our own Worker (reachable without VPN,
+                // 7-day edge cache) instead of direct omdbapi.com through a
+                // public CORS proxy, which fails from no-VPN networks.
+                const _awCtl = new AbortController();
+                const _awTimer = setTimeout(() => _awCtl.abort(), 6000);
+                let res;
+                try { res = await fetch(`https://family-night-api.alirezadoe8.workers.dev/v1/omdb?i=${imdbId}`, { signal: _awCtl.signal }); }
+                finally { clearTimeout(_awTimer); }
                 const data = await res.json();
                 
                 if (data && data.Awards && data.Awards !== 'N/A' && data.Awards !== '') {
