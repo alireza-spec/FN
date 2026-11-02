@@ -798,7 +798,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
             function arm(img) {
                 if (img.dataset.fnWatch) return;
                 img.dataset.fnWatch = '1';
-                var delay = window.__fnSnapMode ? 0 : 2500;
+                var delay = window.__fnSnapMode ? 0 : 1500;
                 setTimeout(function() {
                     try {
                         var src = img.src || '';

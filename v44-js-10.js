@@ -95,6 +95,22 @@ function showToast(msg, duration = 2500) {
         
         // ---- 25. OVERRIDE makeCard TO ADD TRENDING BADGE ----
         const _origMakeCard = makeCard;
+        function _fnCardPosterSrc(posterPath) {
+            if (!window.__fnSnapMode && window.__fnSnapData && window.__fnSnapData.rows) {
+                if (window.__fnSnapPosterData !== window.__fnSnapData) {
+                    var set = {};
+                    Object.keys(window.__fnSnapData.rows).forEach(function(k) {
+                        (window.__fnSnapData.rows[k] || []).forEach(function(it) { if (it.poster_path) set[it.poster_path] = 1; });
+                    });
+                    window.__fnSnapPosterSet = set;
+                    window.__fnSnapPosterData = window.__fnSnapData;
+                }
+                if (window.__fnSnapPosterSet[posterPath]) {
+                    return (window.__fnSnapBase || 'snapshot/') + 'img/w200' + posterPath;
+                }
+            }
+            return IMG + posterPath;
+        }
         function makeCard(m, type) {
             if(!m.poster_path) return '';
             let title = m.title || m.name;
@@ -153,7 +169,7 @@ function showToast(msg, duration = 2500) {
                     ${dlBadgeHtml}
                     ${trendingHtml}
                     ${myRatingHtml}
-                    <img src="${IMG+m.poster_path}" class="poster" loading="lazy" onerror="if(!this.dataset.fnRetry){this.dataset.fnRetry=1;var _s=this.src;this.src='';var _t=this;setTimeout(function(){_t.src=_s;},700);}">
+                    <img src="${_fnCardPosterSrc(m.poster_path)}" class="poster" loading="lazy" onerror="if(!this.dataset.fnRetry){this.dataset.fnRetry=1;var _s=this.src;this.src='';var _t=this;setTimeout(function(){_t.src=_s;},700);}">
                     <div class="meta-info">
                         <div class="meta-title">${classicIranFlag}${title}</div>
                         ${metaSubHtml}
