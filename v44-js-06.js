@@ -293,24 +293,58 @@ function toggleSeason(seasonId) {
 
         // === SERVER DEFINITIONS ===
         // Verified 2026-11-02 on Ali G: Who Iz I? (2026) + The Shawshank
-        // Redemption (1994): all 5 play both titles. The 7 old servers
-        // (AutoEmbed, VidSrc, 2Embed, SmashyStream kept, NontonGo,
-        // 111Movies, VidLink, VidEasy) were removed except SmashyStream:
-        // the others were dead or blocked on both titles.
+        // Redemption (1994): all 7 play both titles, no blocking popups.
+        // Order (user order 2026-11-02): EmbedWave first + default, then
+        // by no-popups + Persian-subtitle availability (checked on Ali G):
+        // FlikEmbed + SmashyStream have Persian; Vidy, VidCore, VidSpark
+        // do not; VidSrc Party has Persian but its subtitle dialog opened
+        // popup tabs, so it sits below the clean ones. VidSrc counts as
+        // ONE entry: its ▾ dropdown offers the other mirror domains.
+        // VidSrc mirror domains for the ▾ dropdown on the VidSrc tab.
+        // Main = vidsrc.party (verified: plays both test titles, no
+        // popups on playback). Others are offered for the user to try:
+        // several are blocked/dead from the VM network but may work from
+        // the user's phone/network — that is the point of the dropdown.
+        const VIDSRC_DOMAINS = [
+            { host: 'www.vidsrc.party', m: '/embed/movie/', t: '/embed/tv/' },
+            { host: 'vid-src.top',      m: '/embed/movie/', t: '/embed/tv/' },
+            { host: 'embed.vidsrc.pk',   m: '/movie/',       t: '/tv/' },
+            { host: 'vsembed.ru',        m: '/embed/movie/', t: '/embed/tv/' },
+            { host: 'vidsrc.to',         m: '/embed/movie/', t: '/embed/tv/' },
+            { host: 'vidsrc.cc',         m: '/embed/movie/', t: '/embed/tv/' },
+            { host: 'vidsrc.icu',        m: '/embed/movie/', t: '/embed/tv/' },
+            { host: 'vidsrc.pro',        m: '/embed/movie/', t: '/embed/tv/' },
+            { host: 'vidsrc.io',         m: '/embed/movie/', t: '/embed/tv/' },
+            { host: 'vidsrc.me',         m: '/embed/movie/', t: '/embed/tv/' },
+        ];
+        function _vidsrcDomain() {
+            try {
+                const saved = localStorage.getItem('fnVidsrcDomain');
+                const found = VIDSRC_DOMAINS.find(d => d.host === saved);
+                if (found) return found;
+            } catch(e) {}
+            return VIDSRC_DOMAINS[0];
+        }
         const SERVERS = [
-            { key: 'vidy',       fa: 'سرور ۱ (Vidy)',          en: 'Server 1 (Vidy)',
-              movie: (id,tm,im)=>`https://vidy.st/movie/${tm}`,
-              tv: (id,s,e,tm,im)=>`https://vidy.st/tv/${tm}/${s}/${e}` },
-            { key: 'vidcore',    fa: 'سرور ۲ (VidCore)',       en: 'Server 2 (VidCore)',
-              movie: (id,tm,im)=>`https://vidcore.org/embed/movie/${tm}`,
-              tv: (id,s,e,tm,im)=>`https://vidcore.org/embed/tv/${tm}/${s}/${e}` },
+            { key: 'embedwave',  fa: 'سرور ۱ (EmbedWave)',     en: 'Server 1 (EmbedWave)',
+              movie: (id,tm,im)=>`https://embedwave.cc/embed/movie/${tm}`,
+              tv: (id,s,e,tm,im)=>`https://embedwave.cc/embed/tv/${tm}/${s}/${e}` },
+            { key: 'flikembed',  fa: 'سرور ۲ (FlikEmbed)',     en: 'Server 2 (FlikEmbed)',
+              movie: (id,tm,im)=>`https://flikembed.freebuff.app/embed/movie/${tm}`,
+              tv: (id,s,e,tm,im)=>`https://flikembed.freebuff.app/embed/tv/${tm}/${s}/${e}` },
             { key: 'smashynet',  fa: 'سرور ۳ (SmashyStream)',  en: 'Server 3 (SmashyStream)',
               movie: (id,tm,im)=>`https://embed.smashystream.com/playere.php?imdb=${im||tm}`,
               tv: (id,s,e,tm,im)=>`https://embed.smashystream.com/playere.php?imdb=${im||tm}&season=${s}&episode=${e}` },
-            { key: 'flikembed',  fa: 'سرور ۴ (FlikEmbed)',     en: 'Server 4 (FlikEmbed)',
-              movie: (id,tm,im)=>`https://flikembed.freebuff.app/embed/movie/${tm}`,
-              tv: (id,s,e,tm,im)=>`https://flikembed.freebuff.app/embed/tv/${tm}/${s}/${e}` },
-            { key: 'vidspark',   fa: 'سرور ۵ (VidSpark)',      en: 'Server 5 (VidSpark)',
+            { key: 'vidy',       fa: 'سرور ۴ (Vidy)',          en: 'Server 4 (Vidy)',
+              movie: (id,tm,im)=>`https://vidy.st/movie/${tm}`,
+              tv: (id,s,e,tm,im)=>`https://vidy.st/tv/${tm}/${s}/${e}` },
+            { key: 'vidcore',    fa: 'سرور ۵ (VidCore)',       en: 'Server 5 (VidCore)',
+              movie: (id,tm,im)=>`https://vidcore.org/embed/movie/${tm}`,
+              tv: (id,s,e,tm,im)=>`https://vidcore.org/embed/tv/${tm}/${s}/${e}` },
+            { key: 'vidsrc',     fa: 'سرور ۶ (VidSrc)',        en: 'Server 6 (VidSrc)',
+              movie: (id,tm,im)=>{ const d=_vidsrcDomain(); return `https://${d.host}${d.m}${tm}`; },
+              tv: (id,s,e,tm,im)=>{ const d=_vidsrcDomain(); return `https://${d.host}${d.t}${tm}/${s}/${e}`; } },
+            { key: 'vidspark',   fa: 'سرور ۷ (VidSpark)',      en: 'Server 7 (VidSpark)',
               movie: (id,tm,im)=>`https://www.vidspark.to/movie/${tm}`,
               tv: (id,s,e,tm,im)=>`https://www.vidspark.to/tv/${tm}/${s}/${e}` },
         ];
@@ -337,7 +371,52 @@ function toggleSeason(seasonId) {
                 btn.textContent = label;
                 btn.onclick = () => switchServer(i);
                 tabs.appendChild(btn);
+                // VidSrc ▾: small dropdown button (NOT .psrv-tab, so the
+                // tab index mapping in switchServer stays aligned) that
+                // opens the mirror-domain menu.
+                if (srv.key === 'vidsrc') {
+                    const drop = document.createElement('button');
+                    drop.className = 'psrv-dropbtn';
+                    drop.textContent = '▾';
+                    drop.title = LANG === 'fa' ? 'دامنه‌های دیگر VidSrc' : 'Other VidSrc domains';
+                    drop.onclick = (ev) => { ev.stopPropagation(); _toggleVidsrcMenu(drop); };
+                    tabs.appendChild(drop);
+                }
             });
+        }
+
+        // VidSrc mirror-domain menu (fixed to viewport so the scrolling
+        // tab bar's overflow:hidden cannot clip it).
+        function _toggleVidsrcMenu(anchorBtn) {
+            const existing = document.getElementById('vidsrc-domain-menu');
+            if (existing) { existing.remove(); return; }
+            const cur = _vidsrcDomain();
+            const isFA = LANG === 'fa';
+            const menu = document.createElement('div');
+            menu.id = 'vidsrc-domain-menu';
+            const r = anchorBtn.getBoundingClientRect();
+            const left = Math.max(8, Math.min(r.left, window.innerWidth - 210));
+            menu.style.cssText = 'position:fixed;z-index:9999;background:#14142a;border:1px solid #3a3a5a;border-radius:12px;padding:6px;min-width:200px;max-height:60vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,0.6);left:' + left + 'px;top:' + (r.bottom + 6) + 'px;';
+            menu.innerHTML = '<div style="color:#aaa;font-size:11px;padding:6px 10px 4px;">' + (isFA ? 'دامنه VidSrc — برای امتحان بزن' : 'VidSrc domain — tap to try') + '</div>' + VIDSRC_DOMAINS.map(d => {
+                const active = d.host === cur.host;
+                return '<button data-host="' + d.host + '" style="display:block;width:100%;text-align:left;padding:9px 10px;background:' + (active ? '#2a2a4e' : 'transparent') + ';border:none;border-radius:8px;color:' + (active ? '#fff' : '#ccc') + ';font-size:13px;cursor:pointer;font-family:inherit;">' + (active ? '✓ ' : '') + d.host + '</button>';
+            }).join('');
+            menu.querySelectorAll('button[data-host]').forEach(b => {
+                b.onclick = () => {
+                    try { localStorage.setItem('fnVidsrcDomain', b.getAttribute('data-host')); } catch(e) {}
+                    menu.remove();
+                    buildServerTabs();
+                    const idx = SERVERS.findIndex(s => s.key === 'vidsrc');
+                    if (curPlayerServer === idx) _setIframeSmart(getServerUrl(SERVERS[idx]));
+                    else switchServer(idx);
+                };
+            });
+            document.body.appendChild(menu);
+            setTimeout(() => {
+                document.addEventListener('click', function _closeVidsrcMenu(ev) {
+                    if (!menu.contains(ev.target) && ev.target !== anchorBtn) { menu.remove(); document.removeEventListener('click', _closeVidsrcMenu); }
+                });
+            }, 0);
         }
         
         function _applyServerClass(idx) {
@@ -365,7 +444,7 @@ function toggleSeason(seasonId) {
             const url = getServerUrl(srv);
             // Keep the app-level landscape state stable while standard server iframes reload.
             const pfs = document.getElementById('player-fs');
-            if (pfs && pfs.classList.contains('srv-vidsrcme-tv')) pfs.classList.remove('landscape-mode');
+            if (pfs && pfs.classList.contains('srv-vidsrc-tv')) pfs.classList.remove('landscape-mode');
             else if (document.fullscreenElement || document.webkitFullscreenElement) setTimeout(_playerLandscape, 50);
             _setIframeSmart(url);
         }
@@ -408,10 +487,10 @@ function toggleSeason(seasonId) {
             document.body.appendChild(overlay);
         }
         
-        // ── Small dismissible hint shown only when VidSrc is the active
-        // server: VidSrc's own embed has an internal "SERVER ▾" dropdown
-        // with alternate backend sources — if their default source fails
-        // to connect, the user can switch it from inside the player itself. ──
+        // ── Small dismissible hint shown only when the active server's
+        // own embed has an internal source switcher (SERVER ▾ / provider
+        // buttons): if its default source fails to connect, the user can
+        // switch it from inside the player itself. ──
         let _vidsrcHintTimer = null;
         function _showVidSrcHint() {
             const hint = document.getElementById('vidsrc-hint');
@@ -419,7 +498,7 @@ function toggleSeason(seasonId) {
             if (!hint || !textEl) return;
             const srv = SERVERS[curPlayerServer];
             clearTimeout(_vidsrcHintTimer);
-            if (!srv || ['vidy', 'vidcore', 'flikembed'].indexOf(srv.key) === -1) { hint.classList.remove('show'); return; }
+            if (!srv || ['vidy', 'vidcore', 'flikembed', 'embedwave'].indexOf(srv.key) === -1) { hint.classList.remove('show'); return; }
             textEl.textContent = LANG === 'fa'
                 ? '💡 اگه پخش نشد، روی «SERVER ▾» داخل پلیر بزن و منبع دیگه‌ای رو امتحان کن'
                 : '💡 If it won\'t play, tap "SERVER ▾" inside the player to try another source';
@@ -435,10 +514,8 @@ function toggleSeason(seasonId) {
             
             if (serverIdx !== undefined) {
                 curPlayerServer = serverIdx;
-            } else if (curType === 'tv') {
-                const vidsrcIdx = SERVERS.findIndex(s => s.key === 'vidsrcme');
-                curPlayerServer = vidsrcIdx >= 0 ? vidsrcIdx : 0;
             } else {
+                // Default server is index 0 (EmbedWave) for movies and TV.
                 curPlayerServer = 0;
             }
             

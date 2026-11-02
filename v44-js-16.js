@@ -16,7 +16,10 @@
     // Streaming-server embed domains (used by the online player)
     var PLAYER_DOMAINS = [
         'vidy.st', 'vidcore.org', 'embed.smashystream.com',
-        'flikembed.freebuff.app', 'vidspark.to'
+        'flikembed.freebuff.app', 'vidspark.to', 'embedwave.cc',
+        'www.vidsrc.party', 'vid-src.top', 'embed.vidsrc.pk',
+        'vsembed.ru', 'vidsrc.to', 'vidsrc.cc', 'vidsrc.icu',
+        'vidsrc.pro', 'vidsrc.io', 'vidsrc.me'
     ];
 
     // Ordered fallback proxies for generic fetch() (API/text) calls.
