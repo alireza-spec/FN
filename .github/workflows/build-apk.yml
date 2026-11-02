@@ -114,10 +114,10 @@ jobs:
           import re
           p = 'android/app/build.gradle'
           s = open(p).read()
-          s = re.sub(r'versionCode \d+', 'versionCode 4404', s)
-          s = re.sub(r'versionName "[^"]*"', 'versionName "44.0.4"', s)
+          s = re.sub(r'versionCode \d+', 'versionCode 4420', s)
+          s = re.sub(r'versionName "[^"]*"', 'versionName "44.0.20"', s)
           open(p, 'w').write(s)
-          print('versionCode 4404' in s, 'versionName "44.0.4"' in s)
+          print('versionCode 4420' in s, 'versionName "44.0.20"' in s)
           PY
 
       - name: Build debug APK
@@ -126,26 +126,27 @@ jobs:
 
       - name: Rename APK
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk FamilyNight-v44.0.4.apk
-          ls -lh FamilyNight-v44.0.4.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk FamilyNight-v44.0.20.apk
+          ls -lh FamilyNight-v44.0.20.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FamilyNight-v44.0.4
-          path: FamilyNight-v44.0.4.apk
+          name: FamilyNight-v44.0.20
+          path: FamilyNight-v44.0.20.apk
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v44.0.4
-          name: Family Night v44.0.4 (APK)
+          tag_name: v44.0.20
+          name: Family Night v44.0.20 (APK)
           body: |
-            Family Night Android APK, built from the web app in this repo (v44.0.4).
+            Family Night Android APK, built from the web app in this repo (v44.0.20).
             No-VPN mode: when the Worker host is unreachable, Home renders from an hourly
-            snapshot bundled in the APK (rows, hero, posters). Default language is now English.
-            Speed package: home rows load max 3 at a time, fonts bundled inside the APK,
-            API cache fresh window extended to 6 hours for trending/discover.
+            snapshot bundled in the APK (rows, hero, posters). Default language is English.
+            v44.0.20 highlights: player popups blocked (sandboxed player iframe), sidebar
+            handle rides with the sidebar, prev/next server buttons in the sidebar,
+            detail loader never sticks (10s failsafe), watchlist/favorites state fixed.
             Install by sideloading: allow "Install unknown apps" for your browser, then open the APK.
             This is a debug-signed APK for direct installation. It is not a Play Store release build.
-          files: FamilyNight-v44.0.4.apk
+          files: FamilyNight-v44.0.20.apk
