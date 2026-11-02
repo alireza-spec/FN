@@ -35,7 +35,7 @@
       var featureWrap = document.getElementById('splash-feature-wrap');
       var fill = document.getElementById('splash-progress-fill');
       var pct = document.getElementById('splash-progress-pct');
-      var isFa = (localStorage.getItem('lang') || 'fa') === 'fa';
+      var isFa = (localStorage.getItem('lang') || 'en') === 'fa';
       var features = isFa ? FEATURES_FA : FEATURES_EN;
 
       function renderFeature(i){

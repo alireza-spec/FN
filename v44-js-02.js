@@ -84,15 +84,16 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                     clearTimeout(timeout);
                     if (res.ok) return await res.json();
                 } catch(e) { /* fall through to proxy */ }
-                // اگه مستقیم نشد، یه بار با اولین proxy امتحان کن
-                try {
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 5000);
-                    const proxyUrl = PROXIES[0] + encodeURIComponent(finalUrl);
-                    const res = await fetch(proxyUrl, { signal: controller.signal });
-                    clearTimeout(timeout);
-                    if (res.ok) return await res.json();
-                } catch(e) {}
+                // اگه مستقیم نشد، همه proxy ها را به ترتیب امتحان کن
+                for (const p of PROXIES) {
+                    try {
+                        const controller = new AbortController();
+                        const timeout = setTimeout(() => controller.abort(), 5000);
+                        const res = await fetch(p + encodeURIComponent(finalUrl), { signal: controller.signal });
+                        clearTimeout(timeout);
+                        if (res.ok) return await res.json();
+                    } catch(e) {}
+                }
                 throw new Error('TMDB fetch failed');
             }
             
@@ -126,7 +127,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
         
         const FAV_KEY = 'family_favs_v2';
         const MIN_VOTES = 100;
-        let LANG = localStorage.getItem('lang') || 'fa';
+        let LANG = localStorage.getItem('lang') || 'en';
         let PRIMARY_COLOR = localStorage.getItem('primary_color') || '#E50914';
         
         // DOWNLOADS DATABASE - این دیتابیس شامل لینک‌های مستقیم دانلود 914 اثر است
@@ -640,7 +641,56 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                 return { results: [] };
             }
         }
-        function init() {
+
+        // ===== FN SNAPSHOT MODE (no-VPN fallback) =====
+        // When the Worker is unreachable (filtered network), Home renders from an
+        // hourly snapshot published on Pages/jsdelivr instead of showing blank rows.
+        window.__fnSnapMode = false;
+        window.__fnSnapData = null;
+        window.__fnSnapBase = '';
+        async function fnProbeSnapshot() {
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 3500);
+                const res = await fetch(BASE + '/trending/all/day?language=en-US', { signal: controller.signal });
+                clearTimeout(timeout);
+                if (res.ok) return false;
+            } catch(e) {}
+            const bases = ['snapshot/home.json', 'https://cdn.jsdelivr.net/gh/alireza-spec/FN@main/snapshot/home.json'];
+            for (const b of bases) {
+                try {
+                    const r = await fetch(b);
+                    if (r.ok) {
+                        const jj = await r.json();
+                        if (jj && jj.rows) {
+                            window.__fnSnapData = jj;
+                            window.__fnSnapBase = b.replace(/home\.json$/, '');
+                            window.__fnSnapMode = true;
+                            return true;
+                        }
+                    }
+                } catch(e) {}
+            }
+            return false;
+        }
+        // Any Worker image that fails (cards, hero, detail) retries once from the
+        // snapshot image folder (Pages when same-origin, jsdelivr when that won).
+        document.addEventListener('error', function(e) {
+            try {
+                const t = e.target;
+                if (!t || t.tagName !== 'IMG' || (t.dataset && t.dataset.fnSnap)) return;
+                const src = t.src || '';
+                if (src.indexOf('snapshot/img/') !== -1) return;
+                const mm = src.match(/\/img\/(w200|w780)(\/[^?#]+)/);
+                if (!mm) return;
+                if (t.dataset) t.dataset.fnSnap = '1';
+                const base = window.__fnSnapBase || 'snapshot/';
+                t.src = base + 'img/' + mm[1] + mm[2];
+            } catch(err) {}
+        }, true);
+        async function init() {
+            // No-VPN detection first: if the Worker is blocked, Home renders from snapshot.
+            try { window.__fnSnapMode = await fnProbeSnapshot(); } catch(e) {}
             // Check initial network state
             if (!navigator.onLine) showNetworkStatus(false);
             setTheme(PRIMARY_COLOR);

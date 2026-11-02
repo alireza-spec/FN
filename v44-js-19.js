@@ -319,9 +319,9 @@ document.addEventListener('fullscreenchange',icons);document.addEventListener('w
       else task();
     };
   }
-  var FN_VER41 = 'v44.0.3';
+  var FN_VER41 = 'v44.0.4';
   window.FN_APP_VERSION = FN_VER41;
-  function fnIsFa(){ try { return (typeof LANG !== 'undefined' ? LANG : (localStorage.getItem('lang') || 'fa')) === 'fa'; } catch(e){ return true; } }
+  function fnIsFa(){ try { return (typeof LANG !== 'undefined' ? LANG : (localStorage.getItem('lang') || 'en')) === 'fa'; } catch(e){ return true; } }
   function applyFnVersion(){
     try {
       document.title = 'Family Night ' + FN_VER41;
