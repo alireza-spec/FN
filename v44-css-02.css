@@ -277,8 +277,64 @@
         #vidsrc-hint.show { display: flex; animation: vidsrcHintIn 0.3s ease; }
         @keyframes vidsrcHintIn { from { opacity:0; transform:translateX(-50%) translateY(-8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         #vidsrc-hint i { opacity: 0.55; font-size: 11px; flex-shrink: 0; }
-        /* ═══════════════════════════════════════════════════════════════ */
-        /* ═══ FLOATING "PICK A MOVIE" BUTTON (Home tab only) ═══════════════ */
+        /* ═══ PLAYER SIDEBAR (v44.0.17): right-center glassy bar ═══ */
+        #player-topbar { display: none !important; }
+        #player-ctrl-bar { top: 8px; }
+        #player-tap-catcher { top: 0; }
+        #player-sidebar-handle {
+            position: fixed; right: 0; top: 50%; transform: translateY(-50%);
+            z-index: 312; width: 34px; height: 64px; border: none;
+            border-radius: 10px 0 0 10px; cursor: pointer;
+            background: rgba(229,9,20,0.28); color: #fff; font-size: 14px;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+        }
+        #player-sidebar-handle.open i { transform: rotate(180deg); }
+        #player-sidebar {
+            position: fixed; right: 0; top: 50%;
+            transform: translateY(-50%) translateX(108%);
+            transition: transform 0.25s ease;
+            z-index: 310; width: 218px; max-height: 76vh; overflow-y: auto;
+            background: rgba(120,10,16,0.42);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.16); border-right: none;
+            border-radius: 14px 0 0 14px; padding: 10px 10px 12px;
+            box-shadow: -6px 8px 30px rgba(0,0,0,0.45);
+        }
+        #player-sidebar.open { transform: translateY(-50%) translateX(0); }
+        .psb-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+        .psb-actions button {
+            flex: 1; height: 38px; border-radius: 11px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(0,0,0,0.35); color: #fff; font-size: 15px;
+        }
+        .psb-actions button:active { background: rgba(255,255,255,0.22); }
+        .psb-row {
+            display: flex; align-items: stretch; flex-wrap: wrap;
+            margin-bottom: 6px; border-radius: 11px; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0,0,0,0.30);
+        }
+        .psb-row.active { border-color: rgba(255,255,255,0.45); background: rgba(229,9,20,0.45); }
+        .psb-srv {
+            flex: 1; text-align: left; padding: 10px 12px; cursor: pointer;
+            background: transparent; border: none; color: #eee;
+            font-size: 13px; font-weight: 600; font-family: inherit; white-space: nowrap;
+        }
+        .psb-arrow {
+            width: 40px; cursor: pointer; color: #fff; font-size: 14px;
+            background: rgba(255,255,255,0.08); border: none;
+            border-left: 1px solid rgba(255,255,255,0.12);
+        }
+        .psb-mirrors { display: none; width: 100%; border-top: 1px solid rgba(255,255,255,0.10); }
+        .psb-row.mirrors-open .psb-mirrors { display: block; }
+        .psb-mirror {
+            display: block; width: 100%; text-align: left; cursor: pointer;
+            padding: 9px 12px 9px 20px; background: transparent; border: none;
+            color: #ccc; font-size: 12px; font-family: inherit;
+        }
+        .psb-mirror.active { color: #fff; font-weight: 700; }
+        #player-fs.mini-mode #player-sidebar, #player-fs.mini-mode #player-sidebar-handle { display: none !important; }
         #fab-pick-movie {
             position: fixed;
             right: 16px; bottom: 85px;

@@ -327,8 +327,8 @@ function toggleSeason(seasonId) {
         }
         const SERVERS = [
             { key: 'embedwave',  fa: 'سرور ۱ (EmbedWave)',     en: 'Server 1 (EmbedWave)',
-              movie: (id,tm,im)=>`https://embedwave.cc/embed/movie/${tm}`,
-              tv: (id,s,e,tm,im)=>`https://embedwave.cc/embed/tv/${tm}/${s}/${e}` },
+              movie: (id,tm,im)=>`https://embedwave.cc/embed/movie/${tm}?server=cinesrc`,
+              tv: (id,s,e,tm,im)=>`https://embedwave.cc/embed/tv/${tm}/${s}/${e}?server=cinesrc` },
             { key: 'flikembed',  fa: 'سرور ۲ (FlikEmbed)',     en: 'Server 2 (FlikEmbed)',
               movie: (id,tm,im)=>`https://flikembed.freebuff.app/embed/movie/${tm}`,
               tv: (id,s,e,tm,im)=>`https://flikembed.freebuff.app/embed/tv/${tm}/${s}/${e}` },
@@ -360,63 +360,68 @@ function toggleSeason(seasonId) {
             return srv.tv(id, curSeason||1, curEp||1, tmdb, imdb);
         }
         
-        function buildServerTabs() {
-            const tabs = document.getElementById('player-server-tabs');
-            if(!tabs) return;
-            tabs.innerHTML = '';
+        // Player sidebar (v44.0.17): right-center glassy bar built from
+        // SERVERS. Row tap selects a server (and closes the panel);
+        // the VidSrc ▾ arrow ONLY expands its mirror list, never
+        // selects. Mirror tap picks that mirror (reloads if VidSrc is
+        // active). Handle toggles the panel; a tap on the page or a
+        // server pick closes it so it never hogs the screen.
+        function buildPlayerSidebar() {
+            const list = document.getElementById('player-sidebar-servers');
+            if(!list) return;
+            list.innerHTML = '';
             SERVERS.forEach((srv, i) => {
                 const label = LANG === 'fa' ? srv.fa : srv.en;
+                const row = document.createElement('div');
+                row.className = 'psb-row' + (i === curPlayerServer ? ' active' : '');
                 const btn = document.createElement('button');
-                btn.className = 'psrv-tab' + (i === curPlayerServer ? ' active' : '');
+                btn.className = 'psb-srv';
                 btn.textContent = label;
-                btn.onclick = () => switchServer(i);
-                tabs.appendChild(btn);
-                // VidSrc ▾: small dropdown button (NOT .psrv-tab, so the
-                // tab index mapping in switchServer stays aligned) that
-                // opens the mirror-domain menu.
+                btn.onclick = () => { switchServer(i); closePlayerSidebar(); };
+                row.appendChild(btn);
                 if (srv.key === 'vidsrc') {
-                    const drop = document.createElement('button');
-                    drop.className = 'psrv-dropbtn';
-                    drop.textContent = '▾';
-                    drop.title = LANG === 'fa' ? 'دامنه‌های دیگر VidSrc' : 'Other VidSrc domains';
-                    drop.onclick = (ev) => { ev.stopPropagation(); _toggleVidsrcMenu(drop); };
-                    tabs.appendChild(drop);
+                    const arrow = document.createElement('button');
+                    arrow.className = 'psb-arrow';
+                    arrow.textContent = '▾';
+                    arrow.title = LANG === 'fa' ? 'دامنه‌های دیگر VidSrc' : 'Other VidSrc domains';
+                    arrow.onclick = (ev) => { ev.stopPropagation(); row.classList.toggle('mirrors-open'); };
+                    row.appendChild(arrow);
+                    const mirrors = document.createElement('div');
+                    mirrors.className = 'psb-mirrors';
+                    const cur = _vidsrcDomain();
+                    VIDSRC_DOMAINS.forEach(d => {
+                        const m = document.createElement('button');
+                        m.className = 'psb-mirror' + (d.host === cur.host ? ' active' : '');
+                        m.textContent = d.host;
+                        m.onclick = () => {
+                            try { localStorage.setItem('fnVidsrcDomain', d.host); } catch(e) {}
+                            buildPlayerSidebar();
+                            const idx = SERVERS.findIndex(s => s.key === 'vidsrc');
+                            if (curPlayerServer === idx) _setIframeSmart(getServerUrl(SERVERS[idx]));
+                            else switchServer(idx);
+                            closePlayerSidebar();
+                        };
+                        mirrors.appendChild(m);
+                    });
+                    row.appendChild(mirrors);
                 }
+                list.appendChild(row);
             });
         }
 
-        // VidSrc mirror-domain menu (fixed to viewport so the scrolling
-        // tab bar's overflow:hidden cannot clip it).
-        function _toggleVidsrcMenu(anchorBtn) {
-            const existing = document.getElementById('vidsrc-domain-menu');
-            if (existing) { existing.remove(); return; }
-            const cur = _vidsrcDomain();
-            const isFA = LANG === 'fa';
-            const menu = document.createElement('div');
-            menu.id = 'vidsrc-domain-menu';
-            const r = anchorBtn.getBoundingClientRect();
-            const left = Math.max(8, Math.min(r.left, window.innerWidth - 210));
-            menu.style.cssText = 'position:fixed;z-index:9999;background:#14142a;border:1px solid #3a3a5a;border-radius:12px;padding:6px;min-width:200px;max-height:60vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,0.6);left:' + left + 'px;top:' + (r.bottom + 6) + 'px;';
-            menu.innerHTML = '<div style="color:#aaa;font-size:11px;padding:6px 10px 4px;">' + (isFA ? 'دامنه VidSrc — برای امتحان بزن' : 'VidSrc domain — tap to try') + '</div>' + VIDSRC_DOMAINS.map(d => {
-                const active = d.host === cur.host;
-                return '<button data-host="' + d.host + '" style="display:block;width:100%;text-align:left;padding:9px 10px;background:' + (active ? '#2a2a4e' : 'transparent') + ';border:none;border-radius:8px;color:' + (active ? '#fff' : '#ccc') + ';font-size:13px;cursor:pointer;font-family:inherit;">' + (active ? '✓ ' : '') + d.host + '</button>';
-            }).join('');
-            menu.querySelectorAll('button[data-host]').forEach(b => {
-                b.onclick = () => {
-                    try { localStorage.setItem('fnVidsrcDomain', b.getAttribute('data-host')); } catch(e) {}
-                    menu.remove();
-                    buildServerTabs();
-                    const idx = SERVERS.findIndex(s => s.key === 'vidsrc');
-                    if (curPlayerServer === idx) _setIframeSmart(getServerUrl(SERVERS[idx]));
-                    else switchServer(idx);
-                };
-            });
-            document.body.appendChild(menu);
-            setTimeout(() => {
-                document.addEventListener('click', function _closeVidsrcMenu(ev) {
-                    if (!menu.contains(ev.target) && ev.target !== anchorBtn) { menu.remove(); document.removeEventListener('click', _closeVidsrcMenu); }
-                });
-            }, 0);
+        function togglePlayerSidebar() {
+            const sb = document.getElementById('player-sidebar');
+            const h = document.getElementById('player-sidebar-handle');
+            if (!sb) return;
+            const open = sb.classList.toggle('open');
+            if (h) h.classList.toggle('open', open);
+        }
+
+        function closePlayerSidebar() {
+            const sb = document.getElementById('player-sidebar');
+            const h = document.getElementById('player-sidebar-handle');
+            if (sb) sb.classList.remove('open');
+            if (h) h.classList.remove('open');
         }
         
         function _applyServerClass(idx) {
@@ -438,8 +443,8 @@ function toggleSeason(seasonId) {
         function switchServer(idx) {
             curPlayerServer = idx;
             _applyServerClass(idx);
-            const tabs = document.querySelectorAll('.psrv-tab');
-            tabs.forEach((t,i) => t.classList.toggle('active', i===idx));
+            const rows = document.querySelectorAll('#player-sidebar-servers .psb-row');
+            rows.forEach((t,i) => t.classList.toggle('active', i===idx));
             const srv = SERVERS[idx];
             const url = getServerUrl(srv);
             // Keep the app-level landscape state stable while standard server iframes reload.
@@ -540,7 +545,8 @@ function toggleSeason(seasonId) {
             const epMenu = document.getElementById('player-ep-menu');
             if(epMenu) epMenu.classList.remove('open');
             
-            buildServerTabs();
+            buildPlayerSidebar();
+            closePlayerSidebar();
             _applyServerClass(curPlayerServer);
             const url = getServerUrl(SERVERS[curPlayerServer]);
             _setIframeSmart(url);
@@ -1123,6 +1129,7 @@ function toggleSeason(seasonId) {
             const pfs = document.getElementById('player-fs');
             pfs.style.display = 'none';
             pfs.classList.remove('landscape-mode');
+            closePlayerSidebar();
             const _pipIcon = document.getElementById('player-pip-icon');
             if (_pipIcon) _pipIcon.className = 'fa-solid fa-window-restore';
             document.getElementById('iframe').src = '';
@@ -1223,6 +1230,7 @@ function toggleSeason(seasonId) {
             const pfs=document.getElementById('player-fs');if(!pfs)return; _clearPiPInteraction(pfs); pfs.style.removeProperty('--fn-pip-left');pfs.style.removeProperty('--fn-pip-top');pfs.style.removeProperty('--fn-pip-right');pfs.style.removeProperty('--fn-pip-bottom');pfs.classList.remove('mini-mode','fn-pip-moving','fn-pip-resizing'); const icon=document.getElementById('player-pip-icon');if(icon)icon.className='fa-solid fa-window-restore';const req=pfs.requestFullscreen||pfs.webkitRequestFullscreen;if(req)req.call(pfs).then(()=>_playerLandscape()).catch(()=>_playerLandscape());else _playerLandscape();_showTopbar();_startTopbarTimer();
         }
 
+        var _fnLockRetry = false;
         function _playerLandscape() {
             if(!_isPlayerOpen()) return; const pfs=document.getElementById('player-fs'); if(!pfs||pfs.classList.contains('mini-mode')||pfs.classList.contains('srv-vidsrcme-tv')) return;
             // Stateless orientation handling (v44.0.16 fix): the old
@@ -1233,16 +1241,21 @@ function toggleSeason(seasonId) {
             // i.e. fullscreen in portrait. Now every call re-evaluates:
             // already landscape -> drop the rotate class; portrait ->
             // try the real lock (success drops the class, failure keeps
-            // the CSS rotate fallback). Locking to the current
-            // orientation fires no event, so this cannot loop.
+            // the CSS rotate fallback, plus one retry — a lock request
+            // racing a fullscreen transition can fail transiently).
+            // Locking to the current orientation fires no event, so this
+            // cannot loop.
             var type = '';
             try { type = (screen.orientation && screen.orientation.type) || ''; } catch(_) {}
-            if (type.indexOf('landscape') === 0) { pfs.classList.remove('landscape-mode'); return; }
+            if (type.indexOf('landscape') === 0) { pfs.classList.remove('landscape-mode'); _fnLockRetry = false; return; }
             var locked = false;
             try {
                 if (screen.orientation && screen.orientation.lock) {
                     locked = true;
-                    screen.orientation.lock('landscape').then(function(){ pfs.classList.remove('landscape-mode'); }).catch(function(){ pfs.classList.add('landscape-mode'); });
+                    screen.orientation.lock('landscape').then(function(){ pfs.classList.remove('landscape-mode'); _fnLockRetry = false; }).catch(function(){
+                        pfs.classList.add('landscape-mode');
+                        if (!_fnLockRetry) { _fnLockRetry = true; setTimeout(function(){ if (_isPlayerOpen() && (document.fullscreenElement || document.webkitFullscreenElement)) _playerLandscape(); }, 400); }
+                    });
                 } else if (window.screen.lockOrientation) {
                     locked = true;
                     try { window.screen.lockOrientation('landscape-primary'); pfs.classList.remove('landscape-mode'); } catch(_) { pfs.classList.add('landscape-mode'); }
@@ -1281,13 +1294,31 @@ function toggleSeason(seasonId) {
         // Instead: Back = 2 presses (fullscreen exit, then close via
         // popstate in js10); popup-tab return and any tap on the player
         // re-enter fullscreen automatically (below).
+        // v44.0.17: a server player's OWN fullscreen button (inside its
+        // iframe) fullscreened the video in PORTRAIT — our lock never
+        // applied to it. Now that case is hijacked: exit the server's
+        // fullscreen and re-enter on our container with a landscape
+        // lock, so fullscreen is NEVER portrait while playing.
         (function() {
             function _onFSChange() {
                 if (!_isPlayerOpen()) return;
                 var icon = document.getElementById('player-fs-icon');
-                var isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
-                if (icon) icon.className = isFS ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
-                if (isFS) setTimeout(_playerLandscape, 100);
+                var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+                if (icon) icon.className = fsEl ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+                var pfs = document.getElementById('player-fs');
+                if (!fsEl) {
+                    // Our own hijack exit (server FS -> our FS): the exit
+                    // completed, now enter on our container.
+                    if (window._fnHijackFS) { window._fnHijackFS = false; _forcePlayerFullscreen(); }
+                    return;
+                }
+                if (pfs && fsEl !== pfs && !pfs.classList.contains('mini-mode')) {
+                    window._fnHijackFS = true;
+                    try { (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen).call(document); }
+                    catch(_) { window._fnHijackFS = false; _playerLandscape(); }
+                    return;
+                }
+                setTimeout(_playerLandscape, 100);
             }
             document.addEventListener('fullscreenchange', _onFSChange);
             document.addEventListener('webkitfullscreenchange', _onFSChange);
@@ -1304,12 +1335,22 @@ function toggleSeason(seasonId) {
             // Pointer listeners: pause timer while touching, restart on release
             var pfs = document.getElementById('player-fs');
             if (pfs) {
-                pfs.addEventListener('pointerdown', function() {
+                pfs.addEventListener('pointerdown', function(e) {
                     if (!_isPlayerOpen()) return;
                     _showTopbar();
                     clearTimeout(_topbarTimer);
                     // Any tap re-asserts forced fullscreen (fresh gesture).
                     _forcePlayerFullscreen();
+                    // A tap on the page (outside sidebar + handle) closes
+                    // the sidebar so it never hogs the screen. (Taps on
+                    // the video itself go to the cross-origin iframe and
+                    // cannot be observed; the tap-catcher below covers
+                    // those once the topbar auto-hides.)
+                    var sb = document.getElementById('player-sidebar');
+                    if (sb && sb.classList.contains('open')) {
+                        var h = document.getElementById('player-sidebar-handle');
+                        if (!sb.contains(e.target) && !(h && h.contains(e.target))) closePlayerSidebar();
+                    }
                 }, { passive: true });
                 pfs.addEventListener('pointerup', function() {
                     if (_isPlayerOpen()) _startTopbarTimer();
@@ -1319,17 +1360,20 @@ function toggleSeason(seasonId) {
                 }, { passive: true });
             }
 
-            // Tap-catcher: one tap restores topbar when hidden
+            // Tap-catcher: one tap restores topbar when hidden (and
+            // closes the sidebar, same page-tap rule as above).
             var catcher = document.getElementById('player-tap-catcher');
             if (catcher) {
                 catcher.addEventListener('touchstart', function(e) {
                     e.preventDefault();
                     _showTopbar();
                     _startTopbarTimer();
+                    closePlayerSidebar();
                 }, { passive: false });
                 catcher.addEventListener('click', function() {
                     _showTopbar();
                     _startTopbarTimer();
+                    closePlayerSidebar();
                 });
             }
         })();

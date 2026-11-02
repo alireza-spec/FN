@@ -162,47 +162,17 @@
     setInterval(function() { _scanNode(document.body); }, 4000);
 
     // ── Smart iframe loader for the online player ───────────────────────
-    // Tries the direct server URL first; if it hasn't fired a 'load' event
-    // within 4s (typical symptom of a blocked/filtered streaming domain),
-    // automatically reloads the same iframe through the user's own
-    // Cloudflare Worker proxy instead.
-    var _iframeLoadTimer = null;
-    var _iframeLoadToken  = 0;
-
-    function _isPlayerDomainUrl(u) {
-        if (typeof u !== 'string') return false;
-        for (var i = 0; i < PLAYER_DOMAINS.length; i++) {
-            if (u.indexOf(PLAYER_DOMAINS[i]) !== -1) return true;
-        }
-        return false;
-    }
-
+    // Tries the direct server URL only. (History: an earlier version
+    // reloaded the iframe through the user's own Cloudflare Worker
+    // proxy when no 'load' event fired within 4s; that broke JS-heavy
+    // players — EmbedWave stuck on "Loading player...", others blank —
+    // because their player code does not survive proxying, and a slow
+    // direct load could trip the timer even when the page would have
+    // loaded. Direct load + server switch is the reliable path.)
     window._setIframeSmart = function(url) {
         var iframe = document.getElementById('iframe');
         if (!iframe) return;
-
-        clearTimeout(_iframeLoadTimer);
-        var myToken = ++_iframeLoadToken;
-
         iframe.src = url;
-
-        if (!_isPlayerDomainUrl(url) || url.indexOf('workers.dev') !== -1) return;
-
-        var loaded = false;
-        function onLoad() { loaded = true; iframe.removeEventListener('load', onLoad); }
-        iframe.addEventListener('load', onLoad);
-
-        _iframeLoadTimer = setTimeout(function() {
-            if (myToken !== _iframeLoadToken) return;
-            iframe.removeEventListener('load', onLoad);
-            // EmbedWave is excluded: its JS-heavy player breaks when
-            // reloaded through the Worker proxy (stuck on "Loading
-            // player..."), and its own page does load directly — a slow
-            // stream is fixed with its in-player Server switch instead.
-            if (!loaded && url.indexOf('embedwave.cc') === -1) {
-                iframe.src = OWN_WORKER + encodeURIComponent(url);
-            }
-        }, 4000);
     };
 
 })();
