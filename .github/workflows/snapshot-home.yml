@@ -62,7 +62,7 @@ jobs:
               await page.waitForTimeout(400);
             }
             await page.waitForTimeout(30000);
-            const data = await page.evaluate(() => {
+            const data = await page.evaluate(async () => {
               const out = { hero: [], rows: {} };
               const pick = (m) => ({
                 id: m.id, media_type: m.media_type || (m.title ? 'movie' : 'tv'),
@@ -96,14 +96,17 @@ jobs:
               try {
                 const byBackdrop = {};
                 for (const kk of Object.keys(full)) { const mm = full[kk]; if (mm && mm.backdrop_path) byBackdrop[mm.backdrop_path] = mm; }
+                try {
+                  const tr = await fetch('https://family-night-api.alirezadoe8.workers.dev/v1/tmdb/trending/all/day?language=en-US').then(r => r.json());
+                  for (const mm of (tr.results || [])) if (mm.backdrop_path) byBackdrop[mm.backdrop_path] = mm;
+                } catch (e) {}
                 document.querySelectorAll('#hero-carousel .slide').forEach(sl => {
                   const bg = sl.getAttribute('data-bg') || '';
-                  const bm = bg.match(/(\/[^/]+\.jpg)(\?[^'"]*)?$/);
+                  const bm = bg.match(/(\/[^/]+\.(jpg|jpeg|png|webp))(\?[^'"]*)?$/);
                   const bp = bm ? bm[1] : '';
                   if (!bp) return;
                   const f = byBackdrop[bp];
                   if (f) out.hero.push(pick(f));
-                  else out.hero.push({ id: 0, media_type: 'movie', backdrop_path: bp });
                 });
                 out.hero = out.hero.slice(0, 20);
               } catch (e) {}
@@ -137,7 +140,7 @@ jobs:
                   const f = full[type + ':' + id] || full['' + id];
                   if (f) items.push(pick(f));
                   else if (pm) items.push({
-                    id, media_type: type,
+                    id: id, media_type: type,
                     title: titleEl ? titleEl.textContent.trim() : '',
                     poster_path: pm[1],
                     vote_average: rateEl ? parseFloat(rateEl.textContent.replace(/[^0-9.]/g, '')) || null : null,
@@ -179,7 +182,7 @@ jobs:
             const snap = { generated_at: new Date().toISOString(), lang: 'en-US', hero: data.hero, rows: data.rows };
             fs.writeFileSync('snapshot/home.json', JSON.stringify(snap));
             console.log('SNAPSHOT rows:', Object.keys(data.rows).length, 'hero:', data.hero.length, 'posters:', posters.size, 'backdrops:', backdrops.size, 'imgOk:', imgOk, 'imgFail:', imgFail);
-            })().catch(e => { console.error('SNAPSHOT FAILED:', e); process.exit(1); });
+          })().catch(e => { console.error('SNAPSHOT FAILED:', e); process.exit(1); });
           SNAPEOF
           node snap.cjs
           kill $SRV || true
