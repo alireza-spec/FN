@@ -257,7 +257,7 @@ document.addEventListener('fullscreenchange',icons);document.addEventListener('w
   // The monthly-upcoming widget at the bottom is deferred the same way (700px).
   if (!window.fnLoadHomeRow) {
     var _fnEagerRows = 0;
-    // FN-v44.0.2 speed: cap concurrent row loads at 3. Fast scrolling used to
+    // FN-v44.0.3 speed: cap concurrent row loads at 3. Fast scrolling used to
     // fire every visible row at once, flooding the worker (6 connections/host)
     // so rows stalled on skeletons. Queued rows still load, in order, as slots
     // free (promise settle, 1.5s for sync rows, 15s safety cap). No row removed.
@@ -319,7 +319,7 @@ document.addEventListener('fullscreenchange',icons);document.addEventListener('w
       else task();
     };
   }
-  var FN_VER41 = 'v44.0.2';
+  var FN_VER41 = 'v44.0.3';
   window.FN_APP_VERSION = FN_VER41;
   function fnIsFa(){ try { return (typeof LANG !== 'undefined' ? LANG : (localStorage.getItem('lang') || 'fa')) === 'fa'; } catch(e){ return true; } }
   function applyFnVersion(){
