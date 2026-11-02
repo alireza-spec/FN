@@ -37,7 +37,7 @@ jobs:
           python3 -m http.server 8000 >/tmp/http.log 2>&1 &
           SRV=$!
           for i in $(seq 1 20); do curl -sf http://localhost:8000/ >/dev/null && break; sleep 1; done
-          cat > /tmp/snap.cjs << 'SNAPEOF'
+          cat > snap.cjs << 'SNAPEOF'
           const { chromium } = require('playwright');
           const fs = require('fs');
           const path = require('path');
@@ -158,7 +158,7 @@ jobs:
             console.log('SNAPSHOT rows:', Object.keys(data.rows).length, 'hero:', data.hero.length, 'posters:', posters.size, 'backdrops:', backdrops.size, 'imgOk:', imgOk, 'imgFail:', imgFail);
           })().catch(e => { console.error('SNAPSHOT FAILED:', e); process.exit(1); });
           SNAPEOF
-          node /tmp/snap.cjs
+          node snap.cjs
           kill $SRV || true
           git config user.email "fn-snapshot@users.noreply.github.com"
           git config user.name "FN snapshot"
