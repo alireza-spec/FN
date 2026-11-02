@@ -720,6 +720,18 @@ function renderAdditionalScores(scores) {
             if (_detailLoadingTitle) _detailLoadingTitle.textContent = LANG === 'fa' ? 'در حال آماده‌سازی اطلاعات اثر…' : 'Loading title details…';
             if (_detailLoadingSubtitle) _detailLoadingSubtitle.textContent = '';
             if (_detailLoader) _detailLoader.classList.add('show');
+            // v44.0.19 failsafe: the loader must never trap the UI. Even if
+            // a slow network keeps detail fetches pending, hide it after
+            // 10s for this request only (token-guarded, so a newer title's
+            // loader is untouched). Content keeps rendering as it arrives.
+            (function(_tok, _lid, _ltype){
+                setTimeout(function(){
+                    if (window.__fnDetailRequestToken === _tok && curId === _lid && curType === _ltype) {
+                        var _l = document.getElementById('fn-detail-loading');
+                        if (_l) _l.classList.remove('show');
+                    }
+                }, 10000);
+            })(_detailRequestToken, _modalLockId, type);
             document.querySelectorAll('#modal .additional-scores').forEach(function(e){ e.remove(); });
             recordRecentlyViewed(null, id, type);
             _modal.style.zIndex = '220';
@@ -946,6 +958,7 @@ function renderAdditionalScores(scores) {
             }
             
             checkFavState();
+            if (typeof checkWatchlistState === 'function') checkWatchlistState();
             const directorDiv = document.getElementById('d-directors'); 
             directorDiv.innerHTML = ''; 
             
@@ -1079,10 +1092,10 @@ function renderAdditionalScores(scores) {
                 _detailSubtitleSection.insertAdjacentElement('afterend', _aiDetailBox);
             }
             
-            // Load similar titles (kept as a promise: the detail loader
-            // below waits for it, so similar posters are on screen when
-            // the page appears instead of popping in late).
-            const _similarPromise = loadSimilarTitles(id, type, d);
+            // Load similar titles in the background; the detail loader no
+            // longer waits for them (v44.0.19: waiting trapped the UI on
+            // slow networks — see the failsafe above).
+            loadSimilarTitles(id, type, d);
             
             document.getElementById('modal').style.display='block';
             
@@ -1123,24 +1136,6 @@ function renderAdditionalScores(scores) {
             };
             
             initAIBox(curTitle, type, aiYear, aiRichData);
-            // v44.0.18: keep the detail loader until the late sections
-            // have actually rendered (similar titles + backdrop image),
-            // capped at 6s so nobody waits long on the loader.
-            try {
-                const _backdropDone = new Promise((_res) => {
-                    const _im = document.getElementById('d-img');
-                    if (!_im) return _res();
-                    if (_im.complete) return _res();
-                    const _done = () => _res();
-                    _im.addEventListener('load', _done, { once: true });
-                    _im.addEventListener('error', _done, { once: true });
-                    setTimeout(_done, 5000);
-                });
-                await Promise.race([
-                    Promise.allSettled([_similarPromise, _backdropDone]),
-                    new Promise((_res) => setTimeout(_res, 6000))
-                ]);
-            } catch (e) {}
             if (window.__fnDetailRequestToken === _detailRequestToken && curId === _modalLockId && curType === type) {
                 const _readyLoader = document.getElementById('fn-detail-loading');
                 if (_readyLoader) _readyLoader.classList.remove('show');

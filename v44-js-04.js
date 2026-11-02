@@ -1230,7 +1230,7 @@ async function runDefaultDiscovery(container) {
         // --- FAVORITES LOGIC ---
         function checkFavState() {
             const btn = document.getElementById('fav-btn');
-            const exists = favorites.some(f => f.id == curId);
+            const exists = favorites.some(f => f.id == curId && (!f.type || f.type === curType));
             if(exists) {
                 btn.classList.remove('fa-regular');
                 btn.classList.add('fa-solid', 'active');
@@ -1278,7 +1278,7 @@ async function runDefaultDiscovery(container) {
         }
 
         function toggleFav() {
-            const idx = favorites.findIndex(f => f.id == curId);
+            const idx = favorites.findIndex(f => f.id == curId && (!f.type || f.type === curType));
             if(idx > -1) {
                 favorites.splice(idx, 1);
             } else {
@@ -1292,9 +1292,10 @@ async function runDefaultDiscovery(container) {
                     first_air_date: curDataForFav.first_air_date
                 });
             }
-            localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
+            try { localStorage.setItem(FAV_KEY, JSON.stringify(favorites)); } catch(e) {}
             checkFavState();
-            if(document.getElementById('fav-tab').classList.contains('active')) { loadFavorites(); }
+            var _ft = document.getElementById('fav-tab');
+            if (_ft && _ft.classList.contains('active')) { loadFavorites(); }
         }
 
         function _fnInfoEsc(v) {
@@ -1370,7 +1371,7 @@ async function runDefaultDiscovery(container) {
         function toggleWatchlist() {
             haptic(12);
             if (!curId || !curDataForFav) return;
-            var idx = watchlist.findIndex(function(w) { return w.id == curId; });
+            var idx = watchlist.findIndex(function(w) { return w.id == curId && (!w.type || w.type === curType); });
             if (idx > -1) {
                 watchlist.splice(idx, 1);
                 showToast(LANG === 'fa' ? 'از ذخیره‌شده‌ها حذف شد' : 'Removed from Watch Later');
@@ -1387,15 +1388,16 @@ async function runDefaultDiscovery(container) {
                 });
                 showToast(LANG === 'fa' ? 'برای بعداً ذخیره شد' : 'Saved to Watch Later');
             }
-            localStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
+            try { localStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist)); } catch(e) {}
             checkWatchlistState();
-            if(document.getElementById('fav-tab').classList.contains('active')) { loadFavorites(); }
+            var _wt = document.getElementById('fav-tab');
+            if (_wt && _wt.classList.contains('active')) { loadFavorites(); }
         }
 
         function checkWatchlistState() {
             var btn = document.getElementById('watchlist-btn');
             if (!btn || !curId) return;
-            var inList = watchlist.findIndex(function(w) { return w.id == curId; }) > -1;
+            var inList = watchlist.findIndex(function(w) { return w.id == curId && (!w.type || w.type === curType); }) > -1;
             btn.className = (inList ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark');
             btn.style.color = inList ? '#00b894' : '#777';
         }

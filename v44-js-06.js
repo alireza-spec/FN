@@ -514,8 +514,11 @@ function toggleSeason(seasonId) {
         function openPlayerModal(serverIdx) {
             if(!curImdb && !curId) return alert('اطلاعات پخش موجود نیست');
             var _playPoster = (curDataForFav && curDataForFav.poster_path) ? (IMG_LG + curDataForFav.poster_path) : document.getElementById('d-img').src;
-            recordRecentlyViewed({id:curId,title:curTitle,poster:_playPoster,poster_path:curDataForFav && curDataForFav.poster_path,vote_average:curDataForFav && curDataForFav.vote_average}, curId, curType, true);
-            addToHistory({ id: curId, type: curType, title: curTitle, poster: _playPoster, genres: curDataForFav ? curDataForFav.genres : null, rate: curDataForFav ? curDataForFav.vote_average : null });
+            // v44.0.19: history writes must never kill the player open —
+            // a storage failure (e.g. full localStorage) used to throw here
+            // and silently abort the whole Play action before the player showed.
+            try { recordRecentlyViewed({id:curId,title:curTitle,poster:_playPoster,poster_path:curDataForFav && curDataForFav.poster_path,vote_average:curDataForFav && curDataForFav.vote_average}, curId, curType, true); } catch(e) {}
+            try { addToHistory({ id: curId, type: curType, title: curTitle, poster: _playPoster, genres: curDataForFav ? curDataForFav.genres : null, rate: curDataForFav ? curDataForFav.vote_average : null }); } catch(e) {}
             
             if (serverIdx !== undefined) {
                 curPlayerServer = serverIdx;
@@ -747,7 +750,7 @@ function toggleSeason(seasonId) {
                 WATCH_HISTORY = WATCH_HISTORY.slice(0, 50);
             }
             
-            localStorage.setItem('watch_history', JSON.stringify(WATCH_HISTORY));
+            try { localStorage.setItem('watch_history', JSON.stringify(WATCH_HISTORY)); } catch(e) {}
         }
         
         function historyClassify(item) {
@@ -826,7 +829,7 @@ function toggleSeason(seasonId) {
         }
         function confirmClearHistory() {
             WATCH_HISTORY = []; recentlyViewed = [];
-            localStorage.setItem('watch_history', JSON.stringify(WATCH_HISTORY)); localStorage.setItem(RECENTLY_KEY, JSON.stringify(recentlyViewed));
+            try { localStorage.setItem('watch_history', JSON.stringify(WATCH_HISTORY)); localStorage.setItem(RECENTLY_KEY, JSON.stringify(recentlyViewed)); } catch(e) {}
             closeClearHistoryConfirm();
             loadHistory();
         }
