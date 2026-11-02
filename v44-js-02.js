@@ -688,6 +688,34 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
         //                      search, detail, people)
         //   any other http(s) image -> weserv proxy of itself.
         // Weserv is only ever tried after the first two fail, never first.
+        var _wQueue = [], _wActive = 0, _W_MAX = 4;
+        function _wDone(job) { if (job.done) return; job.done = true; _wActive--; _wPump(); }
+        function _wPump() {
+            while (_wActive < _W_MAX && _wQueue.length) {
+                var job = _wQueue.shift(); _wActive++;
+                if (job.kind === 'img') {
+                    (function(j) {
+                        var done = function() { _wDone(j); };
+                        try {
+                            j.el.addEventListener('load', done, { once: true });
+                            j.el.addEventListener('error', done, { once: true });
+                        } catch(e) {}
+                        setTimeout(done, 12000);
+                        j.el.src = j.url;
+                    })(job);
+                } else {
+                    (function(j) {
+                        var done = function() { _wDone(j); };
+                        j.el.style.backgroundImage = 'url(' + j.url + ')';
+                        var pr = new Image();
+                        pr.onload = done; pr.onerror = done;
+                        setTimeout(done, 8000);
+                        pr.src = j.url;
+                    })(job);
+                }
+            }
+        }
+        function fnQueueWeserv(el, url, kind) { _wQueue.push({ el: el, url: url, kind: kind, done: false }); _wPump(); }
         function fnWeservUrl(src) {
             var mm = src.match(/snapshot\/img\/([wh]\d+)(\/[^?#]+)/);
             if (mm) return 'https://images.weserv.nl/?url=image.tmdb.org/t/p/' + mm[1] + mm[2];
@@ -718,7 +746,8 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                 }
                 if (!nu) return;
                 if (t.dataset) t.dataset.fnSnap = String(stage + 1);
-                t.src = nu;
+                if (nu.indexOf('images.weserv.nl') !== -1) fnQueueWeserv(t, nu, 'img');
+                else t.src = nu;
             } catch(err) {}
         }, true);
         // Hanging Worker images: on filtered/slow networks a request can stall
@@ -739,6 +768,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
             function arm(img) {
                 if (img.dataset.fnWatch) return;
                 img.dataset.fnWatch = '1';
+                var delay = window.__fnSnapMode ? 0 : 2500;
                 setTimeout(function() {
                     try {
                         var src = img.src || '';
@@ -750,7 +780,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                         img.dataset.fnSnap = '1';
                         img.src = nu;
                     } catch(e) {}
-                }, 2500);
+                }, delay);
             }
             var io = null;
             try {
@@ -799,12 +829,12 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                                 var p2 = new Image();
                                 var t2 = setTimeout(function() {
                                     var w = fnWeservUrl(nu);
-                                    if (w) sl.style.backgroundImage = 'url(' + w + ')';
+                                    if (w) fnQueueWeserv(sl, w, 'bg');
                                 }, 5000);
                                 p2.onerror = function() {
                                     clearTimeout(t2);
                                     var w = fnWeservUrl(nu);
-                                    if (w) sl.style.backgroundImage = 'url(' + w + ')';
+                                    if (w) fnQueueWeserv(sl, w, 'bg');
                                 };
                                 p2.onload = function() { clearTimeout(t2); };
                                 p2.src = nu;
@@ -815,7 +845,7 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                         } catch(e) {}
                     });
                 } catch(e) {}
-            }, 3000);
+            }, 1500);
         })();
         async function init() {
             // No-VPN detection first: if the Worker is blocked, Home renders from snapshot.
