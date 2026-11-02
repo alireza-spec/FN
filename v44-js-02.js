@@ -688,6 +688,86 @@ const API = 'a707340a9f22632205846e9115f0dfd5';
                 t.src = base + 'img/' + mm[1] + mm[2];
             } catch(err) {}
         }, true);
+        // Hanging Worker images: on filtered/slow networks a request can stall
+        // for a minute without ever firing an error event, so the error-only
+        // fallback above never runs and posters stay blank. Images that are
+        // near the viewport and still unfinished 4s after being noticed are
+        // rewritten once to the snapshot copy (same basename, Pages or the
+        // snapshot base when snapshot mode won). Below-fold lazy images are
+        // untouched until scrolled near. Hero slides (CSS backgrounds, which
+        // never fire error events) get the same treatment via a probe.
+        (function fnImgHangFallback() {
+            function snapUrl(src) {
+                var mm = src.match(/\/img\/(w200|w780)(\/[^?#]+)/);
+                if (!mm) return null;
+                var base = (window.__fnSnapMode && window.__fnSnapBase) ? window.__fnSnapBase : 'snapshot/';
+                return base + 'img/' + mm[1] + mm[2];
+            }
+            function arm(img) {
+                if (img.dataset.fnWatch) return;
+                img.dataset.fnWatch = '1';
+                setTimeout(function() {
+                    try {
+                        var src = img.src || '';
+                        if (!src || src.indexOf('snapshot/img/') !== -1) return;
+                        if (img.dataset.fnSnap) return;
+                        if (img.complete && img.naturalWidth > 0) return;
+                        var nu = snapUrl(src);
+                        if (!nu) return;
+                        img.dataset.fnSnap = '1';
+                        img.src = nu;
+                    } catch(e) {}
+                }, 4000);
+            }
+            var io = null;
+            try {
+                io = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(en) {
+                        if (en.isIntersecting) { arm(en.target); try { io.unobserve(en.target); } catch(e) {} }
+                    });
+                }, { rootMargin: '200px 0px' });
+            } catch(e) { io = null; }
+            var probed = new WeakSet();
+            setInterval(function() {
+                try {
+                    document.querySelectorAll('img').forEach(function(img) {
+                        try {
+                            var src = img.src || '';
+                            if (!src || src.indexOf('snapshot/img/') !== -1) return;
+                            if (!/\/img\/(w200|w780)\//.test(src)) return;
+                            if (img.dataset.fnWatch || img.dataset.fnSnap) return;
+                            if (io) io.observe(img);
+                            else arm(img);
+                        } catch(e) {}
+                    });
+                } catch(e) {}
+                try {
+                    document.querySelectorAll('.slide[data-bg]').forEach(function(sl) {
+                        try {
+                            var bg = sl.style && sl.style.backgroundImage;
+                            if (!bg || bg === 'none') return;
+                            if (bg.indexOf('snapshot/img/') !== -1) return;
+                            if (!/\/img\/w780\//.test(bg)) return;
+                            if (probed.has(sl)) return;
+                            probed.add(sl);
+                            var m = bg.match(/url\(["']?([^"')]+)["']?\)/);
+                            if (!m) return;
+                            var url = m[1];
+                            var done = false;
+                            var probe = new Image();
+                            var timer = setTimeout(function() { if (!done) { done = true; swap(); } }, 5000);
+                            function swap() {
+                                var nu = snapUrl(url);
+                                if (nu) sl.style.backgroundImage = 'url(' + nu + ')';
+                            }
+                            probe.onload = function() { if (!done) { done = true; clearTimeout(timer); } };
+                            probe.onerror = function() { if (!done) { done = true; clearTimeout(timer); swap(); } };
+                            probe.src = url;
+                        } catch(e) {}
+                    });
+                } catch(e) {}
+            }, 3000);
+        })();
         async function init() {
             // No-VPN detection first: if the Worker is blocked, Home renders from snapshot.
             try { window.__fnSnapMode = await fnProbeSnapshot(); } catch(e) {}
