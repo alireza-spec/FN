@@ -71,17 +71,6 @@ jobs:
                 release_date: m.release_date, first_air_date: m.first_air_date,
                 backdrop_path: m.backdrop_path, poster_path: m.poster_path, genre_ids: m.genre_ids || []
               });
-              try {
-                for (let i = 0; i < localStorage.length; i++) {
-                  const k = localStorage.key(i);
-                  if (k && k.indexOf('fn_cache_trending/all/day') === 0) {
-                    const entry = JSON.parse(localStorage.getItem(k));
-                    const res = (entry && entry.data && entry.data.results) || [];
-                    out.hero = res.filter(m => m.backdrop_path).slice(0, 20).map(pick);
-                    break;
-                  }
-                }
-              } catch (e) {}
               const full = {};
               try {
                 for (let i = 0; i < localStorage.length; i++) {
@@ -99,6 +88,38 @@ jobs:
                   }
                 }
               } catch (e) {}
+              // Hero from the rendered slides, NOT from localStorage: home loads
+              // hundreds of cache entries, and the app evicts its oldest entries
+              // (incl. the trending entry set first) once the cache passes 150 keys.
+              // Slides carry data-bg (full w780 URL) for every slide; match the
+              // backdrop against the full item map for complete hero records.
+              try {
+                const byBackdrop = {};
+                for (const kk of Object.keys(full)) { const mm = full[kk]; if (mm && mm.backdrop_path) byBackdrop[mm.backdrop_path] = mm; }
+                document.querySelectorAll('#hero-carousel .slide').forEach(sl => {
+                  const bg = sl.getAttribute('data-bg') || '';
+                  const bm = bg.match(/(\/[^/]+\.jpg)(\?[^'"]*)?$/);
+                  const bp = bm ? bm[1] : '';
+                  if (!bp) return;
+                  const f = byBackdrop[bp];
+                  if (f) out.hero.push(pick(f));
+                  else out.hero.push({ id: 0, media_type: 'movie', backdrop_path: bp });
+                });
+                out.hero = out.hero.slice(0, 20);
+              } catch (e) {}
+              if (!out.hero.length) {
+                try {
+                  for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.indexOf('fn_cache_trending/all/day') === 0) {
+                      const entry = JSON.parse(localStorage.getItem(k));
+                      const res = (entry && entry.data && entry.data.results) || [];
+                      out.hero = res.filter(m => m.backdrop_path).slice(0, 20).map(pick);
+                      break;
+                    }
+                  }
+                } catch (e) {}
+              }
               document.querySelectorAll('.section .row-scroll').forEach(row => {
                 const sid = row.id.replace(/^row-/, '');
                 const items = [];
@@ -116,7 +137,7 @@ jobs:
                   const f = full[type + ':' + id] || full['' + id];
                   if (f) items.push(pick(f));
                   else if (pm) items.push({
-                    id: id, media_type: type,
+                    id, media_type: type,
                     title: titleEl ? titleEl.textContent.trim() : '',
                     poster_path: pm[1],
                     vote_average: rateEl ? parseFloat(rateEl.textContent.replace(/[^0-9.]/g, '')) || null : null,
@@ -158,7 +179,7 @@ jobs:
             const snap = { generated_at: new Date().toISOString(), lang: 'en-US', hero: data.hero, rows: data.rows };
             fs.writeFileSync('snapshot/home.json', JSON.stringify(snap));
             console.log('SNAPSHOT rows:', Object.keys(data.rows).length, 'hero:', data.hero.length, 'posters:', posters.size, 'backdrops:', backdrops.size, 'imgOk:', imgOk, 'imgFail:', imgFail);
-          })().catch(e => { console.error('SNAPSHOT FAILED:', e); process.exit(1); });
+            })().catch(e => { console.error('SNAPSHOT FAILED:', e); process.exit(1); });
           SNAPEOF
           node snap.cjs
           kill $SRV || true
