@@ -25,7 +25,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <title>Family Night v44.0.19</title>
+    <title>Family Night v44.0.20</title>
     <!-- DNS Prefetch & Preconnect for faster API/image loads -->
     <link rel="preconnect" href="https://family-night-api.alirezadoe8.workers.dev" crossorigin>
     <link rel="preconnect" href="https://family-night-api.alirezadoe8.workers.dev" crossorigin>
@@ -1034,7 +1034,7 @@
                 <div class="setting-section">
                     <div class="setting-header" id="txt-about-head">About</div>
                     <div class="dev-info">
-                        <p style="margin-bottom:10px;"><strong id="txt-desc-t">Family Night v44.0.19</strong></p>
+                        <p style="margin-bottom:10px;"><strong id="txt-desc-t">Family Night v44.0.20</strong></p>
                         <p id="txt-desc-b">The ultimate streaming experience. High-quality movies and series at your fingertips.</p>
                         <br>
                         <p id="txt-copy">© 2025 Game of family. All rights reserved.</p>
@@ -1658,17 +1658,27 @@
             allowfullscreen 
             allow="autoplay; fullscreen; picture-in-picture; encrypted-media; accelerometer; gyroscope"
             referrerpolicy="no-referrer"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
         ></iframe>
+        <!-- v44.0.20: the sandbox above is the popup block. It deliberately
+             OMITS allow-popups and allow-top-navigation, so embeds can no
+             longer open ad tabs or drag the top page away when tapped —
+             the exact popups that kept pulling users out of the player.
+             Playback itself keeps scripts + same-origin + forms. -->
         <div id="player-tap-catcher"></div>
-        <!-- Player sidebar (v44.0.19): right-center glassy bar over the
-             player. Handle toggles it; tapping the page or picking a
-             server closes it so it never hogs the screen. -->
+        <!-- Player sidebar (v44.0.20): right-center glassy bar over the
+             player. The handle rides WITH the sidebar: at the screen edge
+             when closed, glued to the sidebar's left edge when open.
+             Actions: previous/next server, PiP, fullscreen, collapse.
+             No close button — the handle closes it. Tapping the page or
+             picking a server closes it so it never hogs the screen. -->
         <button id="player-sidebar-handle" onclick="togglePlayerSidebar()" title="Servers" aria-label="Servers">
             <i class="fa-solid fa-chevron-left"></i>
         </button>
         <div id="player-sidebar">
             <div class="psb-actions">
-                <button onclick="closePlayer()" title="Close" aria-label="Close player"><i class="fa-solid fa-circle-xmark"></i></button>
+                <button onclick="playerPrevServer()" title="Previous server" aria-label="Previous server"><i class="fa-solid fa-chevron-up"></i></button>
+                <button onclick="playerNextServer()" title="Next server" aria-label="Next server"><i class="fa-solid fa-chevron-down"></i></button>
                 <button onclick="togglePlayerPiP()" title="Picture in Picture" aria-label="Picture in Picture"><i class="fa-solid fa-window-restore"></i></button>
                 <button onclick="togglePlayerFullscreen()" title="Fullscreen" aria-label="Fullscreen"><i class="fa-solid fa-expand"></i></button>
                 <button onclick="togglePlayerSidebar()" title="Collapse" aria-label="Collapse sidebar"><i class="fa-solid fa-chevron-right"></i></button>

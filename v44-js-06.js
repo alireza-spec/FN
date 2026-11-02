@@ -454,6 +454,42 @@ function toggleSeason(seasonId) {
             _setIframeSmart(url);
         }
 
+        // v44.0.20: step through the server list from the sidebar.
+        // Wraps around (last -> first, first -> last); the sidebar stays
+        // open so the user can keep stepping without reopening it.
+        function playerNextServer() {
+            if (!SERVERS || !SERVERS.length) return;
+            var next = (typeof curPlayerServer === 'number' ? curPlayerServer : 0) + 1;
+            if (next >= SERVERS.length) next = 0;
+            switchServer(next);
+            _showPlayerConnectingHint();
+        }
+        function playerPrevServer() {
+            if (!SERVERS || !SERVERS.length) return;
+            var prev = (typeof curPlayerServer === 'number' ? curPlayerServer : 0) - 1;
+            if (prev < 0) prev = SERVERS.length - 1;
+            switchServer(prev);
+            _showPlayerConnectingHint();
+        }
+
+        // Connecting note (since v44.0.18): without VPN some server hosts
+        // are unreachable, which used to look like a dead Play button
+        // (black iframe, zero feedback). Show what is happening and
+        // point at the server sidebar; hide on load or after 12s.
+        function _showPlayerConnectingHint() {
+            const hint = document.getElementById('vidsrc-hint');
+            const textEl = document.getElementById('vidsrc-hint-text');
+            const iframe = document.getElementById('iframe');
+            if (!hint || !textEl) return;
+            textEl.textContent = LANG === 'fa'
+                ? '⏳ در حال اتصال به سرور… اگر تصویر سیاه ماند، از نوار قرمز سمت راست سرور دیگری را انتخاب کن'
+                : '⏳ Connecting to server… if the screen stays black, pick another server from the red bar on the right';
+            hint.classList.add('show');
+            const _hide = () => hint.classList.remove('show');
+            if (iframe) iframe.onload = _hide;
+            setTimeout(_hide, 12000);
+        }
+
         // ShowBox داخلی — انتخاب sub-server
         function _openShowboxPicker(serverIdx) {
             const existing = document.getElementById('showbox-picker');
@@ -556,23 +592,8 @@ function toggleSeason(seasonId) {
             const pfs = document.getElementById('player-fs');
             pfs.style.display = 'flex';
 
-            // v44.0.18: connecting note — without VPN some server hosts
-            // are unreachable, which used to look like a dead Play button
-            // (black iframe, zero feedback). Show what is happening and
-            // point at the server sidebar; hide on load or after 12s.
-            (function(){
-                const hint = document.getElementById('vidsrc-hint');
-                const textEl = document.getElementById('vidsrc-hint-text');
-                const iframe = document.getElementById('iframe');
-                if (!hint || !textEl) return;
-                textEl.textContent = LANG === 'fa'
-                    ? '⏳ در حال اتصال به سرور… اگر تصویر سیاه ماند، از نوار قرمز سمت راست سرور دیگری را انتخاب کن'
-                    : '⏳ Connecting to server… if the screen stays black, pick another server from the red bar on the right';
-                hint.classList.add('show');
-                const _hide = () => hint.classList.remove('show');
-                if (iframe) iframe.onload = _hide;
-                setTimeout(_hide, 12000);
-            })();
+            // Connecting note on open (see _showPlayerConnectingHint).
+            _showPlayerConnectingHint();
             
             // Show topbar and start 5-second auto-hide timer
             _showTopbar();

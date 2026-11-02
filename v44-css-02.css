@@ -283,12 +283,18 @@
         #player-tap-catcher { top: 0; }
         #player-sidebar-handle {
             position: fixed; right: 0; top: 50%; transform: translateY(-50%);
+            transition: right 0.25s ease;
             z-index: 312; width: 34px; height: 64px; border: none;
             border-radius: 10px 0 0 10px; cursor: pointer;
             background: rgba(229,9,20,0.28); color: #fff; font-size: 14px;
             backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
             display: flex; align-items: center; justify-content: center;
         }
+        /* v44.0.20: when the sidebar opens, the handle slides WITH it and
+           docks flush against its left edge (sidebar is 218px wide, so
+           right:218px). Same 0.25s timing as the sidebar's transform, so
+           they move as one piece. Closed, it sits at the screen edge. */
+        #player-sidebar-handle.open { right: 218px; }
         #player-sidebar-handle.open i { transform: rotate(180deg); }
         #player-sidebar {
             position: fixed; right: 0; top: 50%;
