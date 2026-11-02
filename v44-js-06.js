@@ -545,30 +545,20 @@ function toggleSeason(seasonId) {
             const url = getServerUrl(SERVERS[curPlayerServer]);
             _setIframeSmart(url);
             const pfs = document.getElementById('player-fs');
-            pfs._fnLandscapeRequested = false;
             pfs.style.display = 'flex';
             
             // Show topbar and start 5-second auto-hide timer
             _showTopbar();
             _startTopbarTimer();
             
-            // Request fullscreen on player div, then lock to landscape
+            // Request fullscreen on player div, then landscape (the
+            // stateless _playerLandscape re-evaluates orientation + lock
+            // on every call, so later re-entries also re-lock).
             const _fsReq = pfs.requestFullscreen || pfs.webkitRequestFullscreen || pfs.mozRequestFullScreen;
-            const _lockLS = function() {
-                try {
-                    if (screen.orientation && screen.orientation.lock) {
-                        screen.orientation.lock('landscape').catch(function() { pfs.classList.add('landscape-mode'); });
-                    } else if (window.screen.lockOrientation) {
-                        window.screen.lockOrientation('landscape-primary');
-                    } else {
-                        pfs.classList.add('landscape-mode');
-                    }
-                } catch(e) { pfs.classList.add('landscape-mode'); }
-            };
             if (_fsReq) {
-                _fsReq.call(pfs).then(_lockLS).catch(_lockLS);
+                try { var _pr = _fsReq.call(pfs); if (_pr && _pr.then) _pr.then(function(){ _playerLandscape(); }).catch(function(){ _playerLandscape(); }); else _playerLandscape(); } catch(_) { _playerLandscape(); }
             } else {
-                _lockLS();
+                _playerLandscape();
             }
         }
         
@@ -1133,7 +1123,6 @@ function toggleSeason(seasonId) {
             const pfs = document.getElementById('player-fs');
             pfs.style.display = 'none';
             pfs.classList.remove('landscape-mode');
-            pfs._fnLandscapeRequested = false;
             const _pipIcon = document.getElementById('player-pip-icon');
             if (_pipIcon) _pipIcon.className = 'fa-solid fa-window-restore';
             document.getElementById('iframe').src = '';
@@ -1236,9 +1225,30 @@ function toggleSeason(seasonId) {
 
         function _playerLandscape() {
             if(!_isPlayerOpen()) return; const pfs=document.getElementById('player-fs'); if(!pfs||pfs.classList.contains('mini-mode')||pfs.classList.contains('srv-vidsrcme-tv')) return;
-            // Apply the visual fallback first; request device orientation once only, to prevent rotation loops.
-            pfs.classList.add('landscape-mode'); if(pfs._fnLandscapeRequested) return; pfs._fnLandscapeRequested=true;
-            try { if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); else if(window.screen.lockOrientation) window.screen.lockOrientation('landscape-primary'); } catch(_) {}
+            // Stateless orientation handling (v44.0.16 fix): the old
+            // once-only lock flag meant orientation was never re-locked
+            // after fullscreen was lost (popup tab + return), leaving a
+            // portrait viewport with the CSS rotate fallback stuck on —
+            // sideways player — and a fullscreen re-entry with no lock,
+            // i.e. fullscreen in portrait. Now every call re-evaluates:
+            // already landscape -> drop the rotate class; portrait ->
+            // try the real lock (success drops the class, failure keeps
+            // the CSS rotate fallback). Locking to the current
+            // orientation fires no event, so this cannot loop.
+            var type = '';
+            try { type = (screen.orientation && screen.orientation.type) || ''; } catch(_) {}
+            if (type.indexOf('landscape') === 0) { pfs.classList.remove('landscape-mode'); return; }
+            var locked = false;
+            try {
+                if (screen.orientation && screen.orientation.lock) {
+                    locked = true;
+                    screen.orientation.lock('landscape').then(function(){ pfs.classList.remove('landscape-mode'); }).catch(function(){ pfs.classList.add('landscape-mode'); });
+                } else if (window.screen.lockOrientation) {
+                    locked = true;
+                    try { window.screen.lockOrientation('landscape-primary'); pfs.classList.remove('landscape-mode'); } catch(_) { pfs.classList.add('landscape-mode'); }
+                }
+            } catch(_) {}
+            if (!locked) pfs.classList.add('landscape-mode');
         }
 
         // Forced fullscreen while the player is open: if fullscreen was

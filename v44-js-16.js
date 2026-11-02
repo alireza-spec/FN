@@ -195,7 +195,11 @@
         _iframeLoadTimer = setTimeout(function() {
             if (myToken !== _iframeLoadToken) return;
             iframe.removeEventListener('load', onLoad);
-            if (!loaded) {
+            // EmbedWave is excluded: its JS-heavy player breaks when
+            // reloaded through the Worker proxy (stuck on "Loading
+            // player..."), and its own page does load directly — a slow
+            // stream is fixed with its in-player Server switch instead.
+            if (!loaded && url.indexOf('embedwave.cc') === -1) {
                 iframe.src = OWN_WORKER + encodeURIComponent(url);
             }
         }, 4000);
