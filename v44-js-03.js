@@ -311,7 +311,7 @@ function populateKeywordsSidebar() {
         
         // --- HERO CAROUSEL (20 Titles, Auto-Play 3s) ---
         async function loadCarouselData() {
-            if (window.__fnSnapData && window.__fnSnapData.hero) {
+            if (window.__fnSnapData && window.__fnSnapData.hero && window.__fnSnapData.hero.length) {
                 carouselData = window.__fnSnapData.hero.filter(m => m.backdrop_path).slice(0, 20);
                 renderCarousel();
                 startCarouselTimer();
