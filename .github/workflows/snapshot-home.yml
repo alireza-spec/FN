@@ -30,7 +30,7 @@ jobs:
       - name: Install Playwright
         run: |
           npm init -y >/dev/null 2>&1 || true
-          npm i playwright
+          npm i playwright@1.64.1
           npx playwright install --with-deps chromium
       - name: Capture snapshot and commit
         run: |
