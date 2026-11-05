@@ -124,6 +124,12 @@ jobs:
                     }
                   }
                 } catch (e) {}
+                if (!out.hero.length) {
+                  try {
+                    const tr2 = await fetch('https://family-night-api.alirezadoe8.workers.dev/v1/tmdb/trending/all/day?language=en-US').then(r => r.json());
+                    out.hero = (tr2.results || []).filter(m => m && m.backdrop_path).slice(0, 20).map(pick);
+                } catch (e) {}
+                }
               }
               document.querySelectorAll('.section .row-scroll').forEach(row => {
                 const sid = row.id.replace(/^row-/, '');
