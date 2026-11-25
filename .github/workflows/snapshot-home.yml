@@ -4,6 +4,11 @@ name: FN home snapshot
 # render Home from Pages/jsdelivr when the Worker host is unreachable
 # (filtered network). The runner loads the real app, scrolls every row,
 # scrapes what the user would actually see, and commits JSON + images.
+# Exception (FN-NEWEST-FIX2): the updates row is NOT scraped - it is
+# written straight from newest.json's series top 20 (live at snapshot
+# time), because the scrape cannot see newest.json items (not in
+# fn_cache_*) and produced year-only upcoming titles with no dates.
+# Same for the newM25 row: written from newest.json's movies top 20.
 # No secrets needed: the runner reaches the Worker, the Worker calls TMDB.
 
 on:
@@ -160,6 +165,66 @@ jobs:
               return out;
             });
             await browser.close();
+            // FN-NEWEST-FIX2: the updates row (newest series) comes from
+            // newest.json directly, NOT from the DOM scrape above. The
+            // scrape rebuilds items from the fn_cache_* map, which never
+            // holds the newest.json items, so the scraped row fell back to
+            // year-only DOM text (upcoming series, no real dates).
+            // newest.json is the same single file the site and the bot
+            // read for newest series, so fetch it live here and take its
+            // series top 20 with real first_air_date values. On any
+            // failure keep the scraped row - the snapshot must never
+            // fail over this override.
+            try {
+              const NEWEST_URLS = [
+                'https://alireza-spec.github.io/family-night-site/download-data/newest.json',
+                'https://cdn.jsdelivr.net/gh/alireza-spec/family-night-site@main/download-data/newest.json'
+              ];
+              let newest = null;
+              for (const u of NEWEST_URLS) {
+                try {
+                  const r = await fetch(u, { signal: AbortSignal.timeout(15000) });
+                  if (!r.ok) { console.log('[newest] HTTP', r.status, u); continue; }
+                  const j = await r.json();
+                  if (j && j.series && Array.isArray(j.series.results) && j.series.results.length) { newest = j; break; }
+                  console.log('[newest] no series.results in', u);
+                } catch (e) { console.log('[newest] fetch failed', u, String(e).slice(0, 200)); }
+              }
+              if (newest) {
+                const pickN = (m) => ({
+                  id: m.id, media_type: m.media_type || 'tv',
+                  title: m.title, name: m.name, original_title: m.original_title, original_name: m.original_name,
+                  overview: m.overview, vote_average: m.vote_average, popularity: m.popularity,
+                  release_date: m.release_date, first_air_date: m.first_air_date,
+                  backdrop_path: m.backdrop_path, poster_path: m.poster_path, genre_ids: m.genre_ids || []
+                });
+                const top = newest.series.results.filter(m => m && m.id && m.poster_path).slice(0, 20).map(pickN);
+                if (top.length) {
+                  data.rows.updates = top;
+                  console.log('[newest] updates row replaced from newest.json (generated_at ' + (newest.generated_at || '?') + '):', top.length, 'items, first:', (top[0].name || top[0].title), top[0].first_air_date);
+                } else {
+                  console.log('[newest] series top 20 empty after poster filter - kept scraped updates row');
+                }
+                // Same defect, movies rail: the scraped newM25 row also
+                // falls back to year-only DOM text (0/20 with a real date
+                // in the 2026-11-24 snapshot). Override it from
+                // newest.json's movies top 20 the same way; keep the
+                // scraped row if movies.results is missing or empty.
+                if (newest.movies && Array.isArray(newest.movies.results) && newest.movies.results.length) {
+                  const topM = newest.movies.results.filter(m => m && m.id && m.poster_path).slice(0, 20).map(m => ({ ...pickN(m), media_type: m.media_type || 'movie' }));
+                  if (topM.length) {
+                    data.rows.newM25 = topM;
+                    console.log('[newest] newM25 row replaced from newest.json:', topM.length, 'items, first:', (topM[0].title || topM[0].name), topM[0].release_date);
+                  } else {
+                    console.log('[newest] movies top 20 empty after poster filter - kept scraped newM25 row');
+                  }
+                } else {
+                  console.log('[newest] no movies.results - kept scraped newM25 row');
+                }
+              } else {
+                console.log('[newest] newest.json unavailable - kept scraped updates row');
+              }
+            } catch (e) { console.log('[newest] override failed, kept scraped updates row:', String(e).slice(0, 300)); }
             const posters = new Set();
             const backdrops = new Set();
             for (const sid of Object.keys(data.rows)) for (const m of data.rows[sid]) if (m.poster_path) posters.add(m.poster_path);
